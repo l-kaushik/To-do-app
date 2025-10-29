@@ -3,10 +3,13 @@ package in.lokeshkaushik.to_do_app.service;
 import in.lokeshkaushik.to_do_app.dto.UserDto;
 import in.lokeshkaushik.to_do_app.dto.UserRegistrationDto;
 import in.lokeshkaushik.to_do_app.exception.UserAlreadyExistsException;
+import in.lokeshkaushik.to_do_app.exception.UserNotFoundException;
 import in.lokeshkaushik.to_do_app.model.User;
 import in.lokeshkaushik.to_do_app.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.UUID;
 
 @Service
 public class UserService {
@@ -36,5 +39,11 @@ public class UserService {
         }
 
         return new UserDto(saved.getUuid(), saved.getUsername(), saved.getEmailId());
+    }
+
+    public UserDto getUser(UUID uuid){
+        User user = userRepository.findByUuid(uuid)
+                .orElseThrow(() -> new UserNotFoundException("User not found with UUID: " + uuid));
+        return new UserDto(user.getUuid(), user.getUsername(), user.getEmailId());
     }
 }

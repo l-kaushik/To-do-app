@@ -3,16 +3,34 @@ package in.lokeshkaushik.to_do_app.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
-@ControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    // Handle UUID validation errors
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Object> handleTypeMismatch(MethodArgumentTypeMismatchException ex){
+        String message = "Invalid request parameter";
+        if(ex.getRequiredType() == UUID.class){
+            message = "Invalid UUID format";
+        }
+        return buildResponse(HttpStatus.BAD_REQUEST, message);
+    }
+
+    // Handle user not found
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<Object> handleUserNotFound(UserNotFoundException ex){
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
 
     // Handle validation errors (from @valid)
     @ExceptionHandler(MethodArgumentNotValidException.class)
