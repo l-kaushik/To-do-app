@@ -16,6 +16,12 @@ import java.util.UUID;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // Handle invalid credentials
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<Object> handleInvalidCredentials(InvalidCredentialsException ex){
+        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
     // Handle UUID validation errors
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Object> handleTypeMismatch(MethodArgumentTypeMismatchException ex){
