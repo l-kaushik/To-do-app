@@ -3,9 +3,11 @@ package in.lokeshkaushik.to_do_app.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.Instant;
@@ -39,6 +41,7 @@ public class GlobalExceptionHandler {
     }
 
     // Handle validation errors (from @valid)
+    // Gets called when method has single parameter
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Object> handleValidationErrors(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
@@ -46,12 +49,29 @@ public class GlobalExceptionHandler {
             errors.put(error.getField(), error.getDefaultMessage());
         });
 
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", Instant.now());
-        body.put("status", HttpStatus.BAD_REQUEST.value());
-        body.put("errors", errors);
+        return buildResponseFromMap(HttpStatus.BAD_REQUEST, errors);
+    }
 
-        return ResponseEntity.badRequest().body(body);
+    // Handle Validation errors (from @valid)
+    // Gets called when method has more than one parameter
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<Object> handleHandlerMethodValidation(HandlerMethodValidationException ex){
+        Map<String, String> errors = new HashMap<>();
+
+        // taking validation results for each parameter
+        ex.getParameterValidationResults().forEach(result -> {
+            result.getResolvableErrors().forEach(error -> {
+                // checking if errors from each parameter is an instance of Field error
+                // yes add field name as key for error
+                if(error instanceof org.springframework.validation.FieldError fieldError) {
+                    errors.put(fieldError.getField(), fieldError.getDefaultMessage());
+                } else {
+                    errors.put("validation-failure", error.getDefaultMessage());
+                }
+            });
+        });
+
+        return buildResponseFromMap(HttpStatus.BAD_REQUEST, errors);
     }
 
     // Handle bad request errors
@@ -64,6 +84,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<Object> handleUserAlreadyExists(UserAlreadyExistsException ex) {
         return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    // Handle request parameter exception
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<Object> handleMissingServletRequestParameter(MissingServletRequestParameterException ex) {
+        String missingParameter = ex.getParameterName();
+        String message = "URL missing '" + missingParameter + "' parameter";
+        return buildResponse(HttpStatus.BAD_REQUEST, message);
     }
 
     // Catch-all for any unexpected errors
@@ -79,6 +107,15 @@ public class GlobalExceptionHandler {
         body.put("status", status.value());
         body.put("error", status.getReasonPhrase());
         body.put("message", message);
+        return new ResponseEntity<>(body, status);
+    }
+
+    // Helper to structure multiple error responses
+    private<K, V> ResponseEntity<Object> buildResponseFromMap(HttpStatus status, Map<K, V> errors){
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", Instant.now());
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("errors", errors);
         return new ResponseEntity<>(body, status);
     }
 }
