@@ -1,0 +1,34 @@
+package in.lokeshkaushik.to_do_app.service;
+
+import in.lokeshkaushik.to_do_app.exception.InvalidCredentialsException;
+import in.lokeshkaushik.to_do_app.exception.UserNotFoundException;
+import in.lokeshkaushik.to_do_app.model.User;
+import in.lokeshkaushik.to_do_app.model.UserPrincipal;
+import in.lokeshkaushik.to_do_app.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+@Service
+public class CustomUserDetailsService implements UserDetailsService {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Override
+    public UserDetails loadUserByUsername(String identifier) throws UsernameNotFoundException {
+        User user = null;
+
+        if(identifier.contains("@")){
+            user = userRepository.findByEmailId(identifier)
+                    .orElseThrow(() -> new InvalidCredentialsException("Invalid email"));
+        }
+        else{
+            user = userRepository.findByUsername(identifier)
+                    .orElseThrow(() -> new InvalidCredentialsException("Invalid username"));
+        }
+        return new UserPrincipal(user);
+    }
+}

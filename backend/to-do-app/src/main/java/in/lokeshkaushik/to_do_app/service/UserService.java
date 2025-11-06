@@ -1,18 +1,23 @@
 package in.lokeshkaushik.to_do_app.service;
 
-import in.lokeshkaushik.to_do_app.dto.UserDto;
-import in.lokeshkaushik.to_do_app.dto.UserLoginDto;
-import in.lokeshkaushik.to_do_app.dto.UserRegistrationDto;
-import in.lokeshkaushik.to_do_app.dto.UserUpdateDto;
+import in.lokeshkaushik.to_do_app.config.SecurityConfig;
+import in.lokeshkaushik.to_do_app.dto.*;
 import in.lokeshkaushik.to_do_app.exception.InvalidCredentialsException;
 import in.lokeshkaushik.to_do_app.exception.UserAlreadyExistsException;
 import in.lokeshkaushik.to_do_app.exception.UserNotFoundException;
 import in.lokeshkaushik.to_do_app.model.User;
+import in.lokeshkaushik.to_do_app.model.UserPrincipal;
 import in.lokeshkaushik.to_do_app.repository.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -20,6 +25,15 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private SecurityConfig securityConfig;
+
+    @Autowired
+    AuthenticationManager authenticationManager;
+
+    @Autowired
+    JwtService jwtService;
 
     public UserDto registerUser(UserRegistrationDto registrationDto){
         if(userRepository.existsByEmailId(registrationDto.emailId())){
@@ -33,7 +47,7 @@ public class UserService {
         User user = User.builder()
                 .username(registrationDto.username())
                 .emailId(registrationDto.emailId())
-                .password(registrationDto.password())
+                .password(securityConfig.passwordEncoder().encode(registrationDto.password()))
                 .build();
 
         User saved = userRepository.save(user);
@@ -51,24 +65,20 @@ public class UserService {
         return new UserDto(user.getUuid(), user.getUsername(), user.getEmailId());
     }
 
-    public UserDto loginUser(@Valid UserLoginDto loginDto){
-        String identifier = loginDto.identifier();
-        User user = null;
+    public UserLoginResponseDto loginUser(@Valid UserLoginDto loginDto){
+        try{
+            Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginDto.identifier(), loginDto.password()));
+            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+            User user = userPrincipal.getUser();
+            String jwtToken = jwtService.generateToken(userPrincipal.getUsername());
 
-        if(identifier.contains("@")){
-            user = userRepository.findByEmailId(identifier)
-                    .orElseThrow(() -> new InvalidCredentialsException("Invalid email"));
+            return new UserLoginResponseDto(user.getUuid(), user.getUsername(), user.getEmailId(), jwtToken);
         }
-        else{
-            user = userRepository.findByUsername(identifier)
-                    .orElseThrow(() -> new InvalidCredentialsException("Invalid username"));
+        catch (BadCredentialsException | InternalAuthenticationServiceException e){
+            String message = Objects.equals(e.getMessage(), "Bad credentials") ? "Invalid password" : e.getMessage();
+            throw new InvalidCredentialsException(message + ", please re-verify entered information");
         }
-
-        if(!loginDto.password().matches(user.getPassword())){
-            throw new InvalidCredentialsException("Invalid password");
-        }
-
-        return new UserDto(user.getUuid(), user.getUsername(), user.getEmailId());
     }
 
     public UserDto updateUser(UUID uuid, @Valid UserUpdateDto updateDto) {

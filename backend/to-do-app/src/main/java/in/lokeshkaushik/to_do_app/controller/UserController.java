@@ -1,9 +1,6 @@
 package in.lokeshkaushik.to_do_app.controller;
 
-import in.lokeshkaushik.to_do_app.dto.UserDto;
-import in.lokeshkaushik.to_do_app.dto.UserLoginDto;
-import in.lokeshkaushik.to_do_app.dto.UserRegistrationDto;
-import in.lokeshkaushik.to_do_app.dto.UserUpdateDto;
+import in.lokeshkaushik.to_do_app.dto.*;
 import in.lokeshkaushik.to_do_app.service.UserService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -57,9 +54,9 @@ public class UserController {
         return ResponseEntity.ok(userDto);
     }
 
-    @GetMapping("/login")
-    public ResponseEntity<UserDto> loginUser(@Valid @RequestBody UserLoginDto loginDto){
-        UserDto userDto = userService.loginUser(loginDto);
-        return ResponseEntity.ok(userDto);
+    @PostMapping("/login")
+    public ResponseEntity<UserLoginResponseDto> loginUser(@Valid @RequestBody UserLoginDto loginDto){
+        UserLoginResponseDto userLoginResponseDto = userService.loginUser(loginDto);
+        return ResponseEntity.ok(userLoginResponseDto);
     }
 }
