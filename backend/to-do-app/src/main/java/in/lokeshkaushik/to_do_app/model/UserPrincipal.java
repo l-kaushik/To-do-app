@@ -1,20 +1,12 @@
 package in.lokeshkaushik.to_do_app.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import in.lokeshkaushik.to_do_app.model.userdetails.UuidUserDetails;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
 
-public class UserPrincipal implements UserDetails {
-    private final User user;
-
-    public UserPrincipal(User user){
-        this.user = user;
-    }
+public record UserPrincipal(User user) implements UuidUserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -28,8 +20,11 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public String getUsername() {
-        return user.getUuid().toString();
+        return user.getUsername();
     }
 
-    public User getUser() { return user;}
+    @Override
+    public String getUuid() {
+        return user.getUuid().toString();
+    }
 }
