@@ -35,7 +35,7 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable) // disable /login endpoint
                 .httpBasic(AbstractHttpConfigurer::disable) // disable Basic auth popup
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("api/users/","/api/users/login")
+                        .requestMatchers("/api/users/","/api/users/login")
                         .permitAll()
                         .anyRequest().authenticated()
                 )
