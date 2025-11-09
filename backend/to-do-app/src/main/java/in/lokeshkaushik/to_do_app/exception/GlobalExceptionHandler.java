@@ -19,6 +19,17 @@ import java.util.UUID;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // Handle no changes/updates detected
+    @ExceptionHandler(NoChangesDetectedException.class)
+    public ResponseEntity<Object> handleNoChangesDetected(NoChangesDetectedException ex){
+        HttpStatus status = HttpStatus.OK;
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", Instant.now());
+        body.put("status", status.value());
+        body.put("message", ex.getMessage());
+        return new ResponseEntity<>(body, status);
+    }
+
     // Handle invalid credentials
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<Object> handleInvalidCredentials(InvalidCredentialsException ex){
@@ -122,7 +133,7 @@ public class GlobalExceptionHandler {
     private<K, V> ResponseEntity<Object> buildResponseFromMap(HttpStatus status, Map<K, V> errors){
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", Instant.now());
-        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("status", status.value());
         body.put("errors", errors);
         return new ResponseEntity<>(body, status);
     }

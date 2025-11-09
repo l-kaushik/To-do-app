@@ -27,10 +27,9 @@ public class UserController {
     }
 
     // Update user details
-    @PutMapping("/{uuid}")
-    public ResponseEntity<UserDto> updateUser(@PathVariable @NotNull UUID uuid, @Valid @RequestBody UserUpdateDto updateDto){
-        System.out.println("update user controller called");
-        UserDto userDto = userService.updateUser(uuid, updateDto);
+    @PutMapping("/update")
+    public ResponseEntity<UserDto> updateUser(@Valid @RequestBody UserUpdateDto updateDto){
+        UserDto userDto = userService.updateUser(updateDto);
         return ResponseEntity.ok(userDto);
     }
 

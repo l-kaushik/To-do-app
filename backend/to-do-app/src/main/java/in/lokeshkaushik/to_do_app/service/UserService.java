@@ -3,11 +3,13 @@ package in.lokeshkaushik.to_do_app.service;
 import in.lokeshkaushik.to_do_app.config.SecurityConfig;
 import in.lokeshkaushik.to_do_app.dto.*;
 import in.lokeshkaushik.to_do_app.exception.InvalidCredentialsException;
+import in.lokeshkaushik.to_do_app.exception.NoChangesDetectedException;
 import in.lokeshkaushik.to_do_app.exception.UserAlreadyExistsException;
 import in.lokeshkaushik.to_do_app.exception.UserNotFoundException;
 import in.lokeshkaushik.to_do_app.model.User;
 import in.lokeshkaushik.to_do_app.model.UserPrincipal;
 import in.lokeshkaushik.to_do_app.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,10 +17,14 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 @Service
 public class UserService {
@@ -35,6 +41,7 @@ public class UserService {
     @Autowired
     JwtService jwtService;
 
+    @Transactional
     public UserDto registerUser(UserRegistrationDto registrationDto){
         if(userRepository.existsByEmailId(registrationDto.emailId())){
             throw new UserAlreadyExistsException("Email already registered");
@@ -56,13 +63,13 @@ public class UserService {
             throw new RuntimeException("Failed to save user");
         }
 
-        return new UserDto(saved.getUuid(), saved.getUsername(), saved.getEmailId());
+        return userToUserDto(saved);
     }
 
     public UserDto getUser(UUID uuid){
         User user = userRepository.findByUuid(uuid)
                 .orElseThrow(() -> new UserNotFoundException("User not found with UUID: " + uuid));
-        return new UserDto(user.getUuid(), user.getUsername(), user.getEmailId());
+        return userToUserDto(user);
     }
 
     public UserLoginResponseDto loginUser(@Valid UserLoginDto loginDto){
@@ -81,29 +88,62 @@ public class UserService {
         }
     }
 
-    public UserDto updateUser(UUID uuid, @Valid UserUpdateDto updateDto) {
-        System.out.println("update user service called");
-        User existing = userRepository.findByUuid(uuid)
-                .orElseThrow(() -> new UserNotFoundException("User not found with UUID: " + uuid));
+    @Transactional
+    public UserDto updateUser(@Valid UserUpdateDto updateDto) {
+        var username = updateDto.username();
+        var emailId = updateDto.emailId();
+        var password = updateDto.password();
 
-        if (!existing.getUsername().equals(updateDto.username())
-                && userRepository.existsByUsername(updateDto.username())) {
-            throw new UserAlreadyExistsException("Username already exists");
+        if(isAllBlank(username, emailId, password)){
+            throw new NoChangesDetectedException("No data found for update.");
         }
 
-        if(!existing.getEmailId().equals(updateDto.emailId())
-                && userRepository.existsByEmailId(updateDto.emailId())){
-            throw new UserAlreadyExistsException("EmailId already exists");
+        User existing = getCurrentAuthenticatedUser();
+        boolean changed = false;
+
+        changed |= updateFieldIfChanged(username, existing.getUsername(), newUsername -> {
+            if(userRepository.existsByUsername(newUsername)){
+                throw new UserAlreadyExistsException("Username already exists");
+            }
+            else{
+                existing.setUsername(updateDto.username());
+            }
+        });
+
+        changed |= updateFieldIfChanged(emailId, existing.getEmailId(), newEmailId -> {
+            if(userRepository.existsByEmailId(newEmailId)){
+                throw new UserAlreadyExistsException("EmailId already exists");
+            }
+            else{
+                existing.setEmailId(updateDto.emailId());
+            }
+        });
+
+        if(isNotBlank(password)){
+            existing.setPassword(securityConfig.passwordEncoder().encode(updateDto.password()));
         }
 
-        // update
-        existing.setUsername(updateDto.username());
-        existing.setEmailId(updateDto.emailId());
-        // TODO: Add password encoding
-        existing.setPassword(updateDto.password());
+        if(!changed){
+            throw new NoChangesDetectedException("No changes detected for update.");
+        }
 
         User savedUser = userRepository.save(existing);
-        return new UserDto(savedUser.getUuid(), savedUser.getUsername(), savedUser.getEmailId());
+        return userToUserDto(savedUser);
+    }
+
+    public User getCurrentAuthenticatedUser(){
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        String username = null;
+        if (principal instanceof UserDetails) {
+            username = ((UserDetails) principal).getUsername();
+        } else {
+            // fall back if instanceof failed
+            username = principal.toString();
+        }
+
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found with provided information"));
     }
 
     public boolean isUsernameAvailable(String username) {
@@ -112,5 +152,29 @@ public class UserService {
 
     public boolean isEmailAvailable(String email) {
         return !userRepository.existsByEmailId(email);
+    }
+
+    private boolean isNotBlank(String s){
+        return s != null && !s.trim().isEmpty();
+    }
+
+    private boolean isAllBlank(String... values){
+        return Arrays.stream(values).noneMatch(this::isNotBlank);
+    }
+
+    // provided by ChatGPT ofc
+    // I did implement but a lot of if-else so
+    // basically update if value is new and changed
+    // when criteria matches it run the lines from lambda defined when calling this method.
+    private boolean updateFieldIfChanged(String newValue, String currentValue, Consumer<String> updater){
+        if(isNotBlank(newValue) && !newValue.equals(currentValue)){
+            updater.accept(newValue);
+            return true;
+        }
+        return false;
+    }
+
+    private UserDto userToUserDto(User user){
+       return new UserDto(user.getUuid(), user.getUsername(), user.getEmailId());
     }
 }
