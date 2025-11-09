@@ -78,7 +78,7 @@ public class UserService {
                 new UsernamePasswordAuthenticationToken(loginDto.identifier(), loginDto.password()));
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
             User user = userPrincipal.getUser();
-            String jwtToken = jwtService.generateToken(userPrincipal.getUsername());
+            String jwtToken = jwtService.generateToken(user.getUuid().toString());
 
             return new UserLoginResponseDto(user.getUuid(), user.getUsername(), user.getEmailId(), jwtToken);
         }
@@ -136,7 +136,7 @@ public class UserService {
 
         String username = null;
         if (principal instanceof UserDetails) {
-            username = ((UserDetails) principal).getUsername();
+            username = ((UserPrincipal) principal).getUser().getUsername();
         } else {
             // fall back if instanceof failed
             username = principal.toString();

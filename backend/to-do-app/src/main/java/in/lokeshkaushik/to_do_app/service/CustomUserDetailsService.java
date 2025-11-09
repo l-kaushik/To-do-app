@@ -11,6 +11,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
@@ -24,6 +26,10 @@ public class CustomUserDetailsService implements UserDetailsService {
         if(identifier.contains("@")){
             user = userRepository.findByEmailId(identifier)
                     .orElseThrow(() -> new InvalidCredentialsException("Invalid email"));
+        }
+        else if(identifier.contains("-")){
+            user = userRepository.findByUuid(UUID.fromString(identifier))
+                    .orElseThrow(() -> new InvalidCredentialsException("Invalid UUID"));
         }
         else{
             user = userRepository.findByUsername(identifier)
