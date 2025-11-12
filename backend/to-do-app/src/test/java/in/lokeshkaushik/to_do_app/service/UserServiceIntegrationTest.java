@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @Transactional
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
-class UserServiceIntegrationTest {
+public class UserServiceIntegrationTest {
 
     @Autowired
     private UserService userService;
