@@ -34,6 +34,11 @@ public class WorkspaceService {
        return new WorkspaceIdsResponseDto(ids);
     }
 
+    public Boolean workspaceExistsByName(String name) {
+        if(workspaceRepository.existsByName(name)) return true;
+        throw new WorkspaceNotFoundException("Workspace not found with provided name: " + name);
+    }
+
     private UUID getUserId(){
         return userService.getCurrentAuthenticatedUser().getUuid();
     }

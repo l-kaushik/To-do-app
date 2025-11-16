@@ -13,6 +13,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultMatcher;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 
 import java.util.List;
 import java.util.Random;
@@ -63,11 +65,7 @@ public class WorkspaceServiceIntegrationTest {
 
     @Test
     void getWorkspaceIds_shouldTrueForEmptyList() throws Exception {
-        MvcResult result = mockMvc.perform(get("/api/workspaces")
-                        .header("Authorization", "Bearer " + jwtToken)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andReturn();
+        MvcResult result = performApiCall( "/api/workspaces", status().isOk());
         String json = result.getResponse().getContentAsString();
 
         // expecting empty list
@@ -78,19 +76,26 @@ public class WorkspaceServiceIntegrationTest {
     @Test
     void getWorkspaceIds_shouldReturnBadRequest() throws Exception {
         String workspaceId = "1";
-        MvcResult result = mockMvc.perform(get("/api/workspaces/" + workspaceId)
-                        .header("Authorization", "Bearer " + jwtToken)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest()).andReturn();
+        performApiCall("/api/workspaces/" + workspaceId, status().isBadRequest());
     }
 
     @Test
     void getWorkspaceIds_ShouldReturnNotFound() throws Exception {
         String workspaceId = "35d81cb5-e9b5-4127-925d-f7dc3d012286";
-        MvcResult result = mockMvc.perform(get("/api/workspaces/" + workspaceId)
+        performApiCall("/api/workspaces/" + workspaceId, status().isNotFound());
+    }
+
+    @Test
+    void isWorkspaceExists_ShouldNotFoundOnWrongName() throws Exception {
+        performApiCall("/api/workspaces/exists?name=myWorkspace", status().isNotFound());
+    }
+
+    private MvcResult performApiCall(String uri, ResultMatcher matcher) throws Exception {
+        return mockMvc.perform(get(uri)
                         .header("Authorization", "Bearer " + jwtToken)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(matcher)
                 .andReturn();
     }
 }
