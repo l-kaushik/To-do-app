@@ -4,6 +4,7 @@ import com.jayway.jsonpath.JsonPath;
 import in.lokeshkaushik.to_do_app.dto.*;
 import in.lokeshkaushik.to_do_app.repository.WorkspaceRepository;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,16 +14,21 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.ResultMatcher;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Slf4j
 @SpringBootTest
 @Transactional
 @AutoConfigureMockMvc
@@ -65,7 +71,7 @@ public class WorkspaceServiceIntegrationTest {
 
     @Test
     void getWorkspaceIds_shouldTrueForEmptyList() throws Exception {
-        MvcResult result = performApiCall( "/api/workspaces", status().isOk());
+        MvcResult result = performGetApiCall( "/api/workspaces", status().isOk());
         String json = result.getResponse().getContentAsString();
 
         // expecting empty list
@@ -76,26 +82,53 @@ public class WorkspaceServiceIntegrationTest {
     @Test
     void getWorkspaceIds_shouldReturnBadRequest() throws Exception {
         String workspaceId = "1";
-        performApiCall("/api/workspaces/" + workspaceId, status().isBadRequest());
+        performGetApiCall("/api/workspaces/" + workspaceId, status().isBadRequest());
     }
 
     @Test
     void getWorkspaceIds_ShouldReturnNotFound() throws Exception {
         String workspaceId = "35d81cb5-e9b5-4127-925d-f7dc3d012286";
-        performApiCall("/api/workspaces/" + workspaceId, status().isNotFound());
+        performGetApiCall("/api/workspaces/" + workspaceId, status().isNotFound());
     }
 
     @Test
     void isWorkspaceExists_ShouldNotFoundOnWrongName() throws Exception {
-        performApiCall("/api/workspaces/exists?name=myWorkspace", status().isNotFound());
+        performGetApiCall("/api/workspaces/exists?name=myWorkspace", status().isNotFound());
     }
 
-    private MvcResult performApiCall(String uri, ResultMatcher matcher) throws Exception {
-        return mockMvc.perform(get(uri)
-                        .header("Authorization", "Bearer " + jwtToken)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andDo(MockMvcResultHandlers.print())
-                .andExpect(matcher)
-                .andReturn();
+    @Test
+    void createWorkspace_ShouldReturnUUIDOnCreation() throws Exception {
+        String uri = "/api/workspaces";
+        String requestBody = """
+                {
+                    "name": "myWorkspace",
+                    "tasks": []
+                }
+            """;
+
+        var result = performPostApiCall(uri, requestBody, status().isOk());
+        String json = result.getResponse().getContentAsString();
+        assertNotNull(JsonPath.read(json, "$.uuid"));
+    }
+
+    private MvcResult performGetApiCall(String uri, ResultMatcher matcher) throws Exception {
+       return performApiCall("GET", uri, null, matcher);
+    }
+
+    private MvcResult performPostApiCall(String uri, String requestBody, ResultMatcher matcher) throws Exception {
+        return performApiCall("POST", uri, requestBody, matcher);
+    }
+
+    private MvcResult performApiCall(String requestMethod, String uri, String requestBody, ResultMatcher matcher) throws Exception {
+        RequestBuilder requestBuilder = switch (requestMethod) {
+            case "GET" -> get(uri).header("Authorization", "Bearer " + jwtToken);
+            case "POST" -> post(uri)
+                    .header("Authorization", "Bearer " + jwtToken)
+                    .content(requestBody)
+                    .contentType(MediaType.APPLICATION_JSON);
+            default -> throw new IllegalArgumentException("Invalid request method provided");
+        };
+
+        return mockMvc.perform(requestBuilder).andDo(MockMvcResultHandlers.print()).andExpect(matcher).andReturn();
     }
 }

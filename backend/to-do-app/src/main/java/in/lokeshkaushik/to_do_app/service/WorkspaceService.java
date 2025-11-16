@@ -1,10 +1,12 @@
 package in.lokeshkaushik.to_do_app.service;
 
-import in.lokeshkaushik.to_do_app.dto.WorkspaceResponseDto;
-import in.lokeshkaushik.to_do_app.dto.WorkspaceIdsResponseDto;
+import in.lokeshkaushik.to_do_app.dto.*;
+import in.lokeshkaushik.to_do_app.exception.WorkspaceAlreadyExistsException;
 import in.lokeshkaushik.to_do_app.exception.WorkspaceNotFoundException;
+import in.lokeshkaushik.to_do_app.model.Task;
 import in.lokeshkaushik.to_do_app.model.Workspace;
 import in.lokeshkaushik.to_do_app.repository.WorkspaceRepository;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,13 +27,36 @@ public class WorkspaceService {
                 .orElseThrow(() -> new WorkspaceNotFoundException("Workspace is not present or invalid UUID provided."));
 
         // TODO: Add limit on how much tasks can be fetched at once
-        return new WorkspaceResponseDto(workspace.getUuid(), workspace.getName(), workspace.getTasks());
+        return new WorkspaceResponseDto(workspace.getUuid(), workspace.getName(), fromTaskToTaskResponseDto(workspace.getTasks()));
     }
 
     // TODO: Add limit on how much ids can be fetched at once
     public WorkspaceIdsResponseDto getWorkspaces() {
        List<UUID> ids = workspaceRepository.findAllIdsByOwnerId(getUserId());
        return new WorkspaceIdsResponseDto(ids);
+    }
+
+    public WorkspaceCreateResponseDto createWorkspace(@Valid WorkspaceCreateRequestDto workspaceDto) {
+        if(workspaceRepository.existsByName(workspaceDto.name())){
+            throw new WorkspaceAlreadyExistsException("Cannot create another workspace with name: " + workspaceDto.name());
+        }
+
+        Workspace workspace = Workspace.builder()
+                .owner(userService.getCurrentAuthenticatedUser())
+                .name(workspaceDto.name())
+                .tasks(fromAnyTaskDtoToTask(workspaceDto.tasks()))
+                .build();
+
+        System.out.println(workspace.getOwner().getUuid());
+
+        Workspace saved = workspaceRepository.save(workspace);
+
+        // TODO: Handle it using custom exception and in UserService as well
+        if(saved.getId() == null){
+            throw new RuntimeException("Failed to save workspace");
+        }
+
+        return new WorkspaceCreateResponseDto(saved.getUuid(), saved.getName(), saved.getTasks().size());
     }
 
     public Boolean workspaceExistsByName(String name) {
@@ -41,5 +66,23 @@ public class WorkspaceService {
 
     private UUID getUserId(){
         return userService.getCurrentAuthenticatedUser().getUuid();
+    }
+
+    private List<TaskResponseDto> fromTaskToTaskResponseDto(List<Task> tasks){
+        return tasks.stream().map(task -> new TaskResponseDto(
+                        task.getUuid(),
+                        task.getName(),
+                        task.getDescription(),
+                        task.isCompleted()
+                )).toList();
+    }
+
+    private List<Task> fromAnyTaskDtoToTask(List<? extends TaskDto> tasks){
+        return tasks.stream().map(task -> Task.builder()
+                        .name(task.name())
+                        .description(task.description())
+                        .completed(task.completed())
+                        .build()
+                ).toList();
     }
 }

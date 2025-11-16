@@ -19,10 +19,16 @@ import java.util.UUID;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Handle workspace not found
-    @ExceptionHandler(WorkspaceNotFoundException.class)
-    public ResponseEntity<Object> handleWorkspaceNotFound(WorkspaceNotFoundException ex){
+    // Handle user/workspace not found
+    @ExceptionHandler({UserNotFoundException.class, WorkspaceNotFoundException.class})
+    public ResponseEntity<Object> handleNotFound(RuntimeException ex){
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    // Handle conflicts (like duplicate user, duplicate workspaces)
+    @ExceptionHandler({UserAlreadyExistsException.class, WorkspaceAlreadyExistsException.class})
+    public ResponseEntity<Object> handleConflictExceptions(RuntimeException ex) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
     }
 
     // Handle no changes/updates detected
@@ -50,12 +56,6 @@ public class GlobalExceptionHandler {
             message = "Invalid UUID format";
         }
         return buildResponse(HttpStatus.BAD_REQUEST, message);
-    }
-
-    // Handle user not found
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<Object> handleUserNotFound(UserNotFoundException ex){
-        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     // Handle validation errors (from @valid)
@@ -96,12 +96,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<Object> handleBadRequest(BadRequestException ex) {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
-    }
-
-    // Handle conflicts (like duplicate user)
-    @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<Object> handleUserAlreadyExists(UserAlreadyExistsException ex) {
-        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
     }
 
     // Handle request body missing exception

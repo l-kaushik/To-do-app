@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @Repository
 public interface WorkspaceRepository extends JpaRepository<Workspace, Long> {
-    @Query("SELECT w.id FROM Workspace w WHERE w.owner.uuid = :userId")
+    @Query("SELECT w.uuid FROM Workspace w WHERE w.owner.uuid = :userId")
     List<UUID> findAllIdsByOwnerId(@Param("userId") UUID userId);
 
     boolean existsByName(String name);
