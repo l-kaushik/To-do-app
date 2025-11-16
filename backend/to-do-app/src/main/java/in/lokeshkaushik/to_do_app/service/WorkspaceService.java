@@ -66,6 +66,22 @@ public class WorkspaceService {
         throw new WorkspaceNotFoundException("Workspace not found with provided name: " + name);
     }
 
+    public WorkspaceUpdateResponseDto updateWorkspace(@Valid WorkspaceUpdateRequestDto workspaceDto) {
+        Workspace workspace = workspaceRepository.findByUuid(workspaceDto.uuid())
+                .orElseThrow(() -> new WorkspaceNotFoundException(
+                        "Workspace with UUID " + workspaceDto.uuid() + " was expected to exist but not found"
+                ));
+
+        // return same object if nothing to update
+        if(workspace.getName().equals(workspaceDto.name()))
+            return new WorkspaceUpdateResponseDto(workspace.getUuid(), workspace.getName());
+
+        // update and return
+        workspace.setName(workspaceDto.name());
+        Workspace saved = workspaceRepository.save(workspace);
+        return new WorkspaceUpdateResponseDto(saved.getUuid(), saved.getName());
+    }
+
     private UUID getUserId(){
         return userService.getCurrentAuthenticatedUser().getUuid();
     }

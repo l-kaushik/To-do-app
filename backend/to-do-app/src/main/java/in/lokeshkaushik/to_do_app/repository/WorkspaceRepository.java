@@ -16,6 +16,7 @@ public interface WorkspaceRepository extends JpaRepository<Workspace, Long> {
     List<UUID> findAllIdsByOwnerId(@Param("userId") UUID userId);
 
     boolean existsByName(String name);
+    boolean existsByUuid(UUID uuid);
 
     Optional<Workspace> findByUuid(UUID uuid);
 }

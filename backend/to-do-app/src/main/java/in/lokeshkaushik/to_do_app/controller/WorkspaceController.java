@@ -1,9 +1,6 @@
 package in.lokeshkaushik.to_do_app.controller;
 
-import in.lokeshkaushik.to_do_app.dto.WorkspaceCreateRequestDto;
-import in.lokeshkaushik.to_do_app.dto.WorkspaceCreateResponseDto;
-import in.lokeshkaushik.to_do_app.dto.WorkspaceResponseDto;
-import in.lokeshkaushik.to_do_app.dto.WorkspaceIdsResponseDto;
+import in.lokeshkaushik.to_do_app.dto.*;
 import in.lokeshkaushik.to_do_app.service.WorkspaceService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -31,18 +28,25 @@ public class WorkspaceController {
         return ResponseEntity.ok(workspaceService.getWorkspace(workspaceId));
     }
 
-    // post a workspace
     @PostMapping("")
     public ResponseEntity<WorkspaceCreateResponseDto> createWorkspace(@Valid @RequestBody WorkspaceCreateRequestDto workspaceDto){
         return ResponseEntity.ok(workspaceService.createWorkspace(workspaceDto));
     }
 
-    @GetMapping("/exists")
+    /* TODO: instead of 1 big chunky update workspace
+
+    create separate endpoints for add task, remove task, update task
+    and leave update workspace for only update name or other high level features not task related
+    * */
+    @PutMapping("")
+    public ResponseEntity<WorkspaceUpdateResponseDto> updateWorkspace(@Valid @RequestBody WorkspaceUpdateRequestDto workspaceDto){
+        return ResponseEntity.ok(workspaceService.updateWorkspace(workspaceDto));
+    }
+
+    @GetMapping("/exist")
     public ResponseEntity<Boolean> workspaceExistsByName(@RequestParam String name){
         return ResponseEntity.ok(workspaceService.workspaceExistsByName(name));
     }
-
-    // update a workspace
 
     // get task using taskId
 
