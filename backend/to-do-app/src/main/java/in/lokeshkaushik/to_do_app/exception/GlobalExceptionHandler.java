@@ -19,6 +19,12 @@ import java.util.UUID;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // Handle workspace not found
+    @ExceptionHandler(WorkspaceNotFoundException.class)
+    public ResponseEntity<Object> handleWorkspaceNotFound(WorkspaceNotFoundException ex){
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
     // Handle no changes/updates detected
     @ExceptionHandler(NoChangesDetectedException.class)
     public ResponseEntity<Object> handleNoChangesDetected(NoChangesDetectedException ex){
