@@ -11,9 +11,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@Table(name = "tasks")
 public class Task extends AuditableEntity{
-
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String name;
     private String description;
     private boolean completed;

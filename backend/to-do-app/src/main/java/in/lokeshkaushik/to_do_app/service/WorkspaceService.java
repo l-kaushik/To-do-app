@@ -44,10 +44,12 @@ public class WorkspaceService {
         Workspace workspace = Workspace.builder()
                 .owner(userService.getCurrentAuthenticatedUser())
                 .name(workspaceDto.name())
-                .tasks(fromAnyTaskDtoToTask(workspaceDto.tasks()))
                 .build();
 
-        System.out.println(workspace.getOwner().getUuid());
+        // make sure each task has reference to workspace
+        List<Task> tasks = fromAnyTaskDtoToTask(workspaceDto.tasks());
+        tasks.forEach(task -> task.setWorkspace(workspace));
+        workspace.setTasks(tasks);
 
         Workspace saved = workspaceRepository.save(workspace);
 

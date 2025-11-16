@@ -97,7 +97,7 @@ public class WorkspaceServiceIntegrationTest {
     }
 
     @Test
-    void createWorkspace_ShouldReturnUUIDOnCreation() throws Exception {
+    void createWorkspace_NoTasks() throws Exception {
         String uri = "/api/workspaces";
         String requestBody = """
                 {
@@ -109,6 +109,33 @@ public class WorkspaceServiceIntegrationTest {
         var result = performPostApiCall(uri, requestBody, status().isOk());
         String json = result.getResponse().getContentAsString();
         assertNotNull(JsonPath.read(json, "$.uuid"));
+        assertEquals(Integer.valueOf(0), JsonPath.read(json, "$.tasksCreated"));
+    }
+    @Test
+    void createWorkspace_WithTasks() throws Exception {
+        String uri = "/api/workspaces";
+        String requestBody = """
+                {
+                    "name": "myWorkspace",
+                    "tasks": [
+                            {
+                                "name": "myTask",
+                                "description": "This is my first task named as myTask",
+                                "completed": false
+                            },
+                            {
+                                "name": "myTask2",
+                                "description": "This is my second task named as myTask",
+                                "completed": true
+                            }
+                    ]
+                }
+            """;
+
+        var result = performPostApiCall(uri, requestBody, status().isOk());
+        String json = result.getResponse().getContentAsString();
+        assertNotNull(JsonPath.read(json, "$.uuid"));
+        assertEquals(Integer.valueOf(2), JsonPath.read(json, "$.tasksCreated"));
     }
 
     private MvcResult performGetApiCall(String uri, ResultMatcher matcher) throws Exception {
