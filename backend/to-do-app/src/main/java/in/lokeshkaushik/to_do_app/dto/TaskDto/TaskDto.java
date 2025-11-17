@@ -1,4 +1,4 @@
-package in.lokeshkaushik.to_do_app.dto;
+package in.lokeshkaushik.to_do_app.dto.TaskDto;
 
 public interface TaskDto {
     String name();

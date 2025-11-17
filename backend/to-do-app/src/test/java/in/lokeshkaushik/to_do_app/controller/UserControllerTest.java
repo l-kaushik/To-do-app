@@ -1,9 +1,9 @@
 package in.lokeshkaushik.to_do_app.controller;
 
-import in.lokeshkaushik.to_do_app.dto.UserDto;
-import in.lokeshkaushik.to_do_app.dto.UserLoginDto;
-import in.lokeshkaushik.to_do_app.dto.UserLoginResponseDto;
-import in.lokeshkaushik.to_do_app.dto.UserRegistrationDto;
+import in.lokeshkaushik.to_do_app.dto.UserDto.UserDto;
+import in.lokeshkaushik.to_do_app.dto.UserDto.UserLoginDto;
+import in.lokeshkaushik.to_do_app.dto.UserDto.UserLoginResponseDto;
+import in.lokeshkaushik.to_do_app.dto.UserDto.UserRegistrationDto;
 import in.lokeshkaushik.to_do_app.service.JwtService;
 import in.lokeshkaushik.to_do_app.service.UserService;
 import org.junit.jupiter.api.Test;

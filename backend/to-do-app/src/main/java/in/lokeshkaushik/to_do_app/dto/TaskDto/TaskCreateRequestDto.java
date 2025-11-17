@@ -1,4 +1,4 @@
-package in.lokeshkaushik.to_do_app.dto;
+package in.lokeshkaushik.to_do_app.dto.TaskDto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -14,5 +14,5 @@ public record TaskCreateRequestDto(
         String description,
 
         boolean completed
-) implements TaskDto{
+) implements TaskDto {
 }

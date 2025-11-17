@@ -1,6 +1,8 @@
 package in.lokeshkaushik.to_do_app.service;
 
-import in.lokeshkaushik.to_do_app.dto.*;
+import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskDto;
+import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskResponseDto;
+import in.lokeshkaushik.to_do_app.dto.WorkspaceDtos.*;
 import in.lokeshkaushik.to_do_app.exception.WorkspaceAlreadyExistsException;
 import in.lokeshkaushik.to_do_app.exception.WorkspaceNotFoundException;
 import in.lokeshkaushik.to_do_app.model.Task;

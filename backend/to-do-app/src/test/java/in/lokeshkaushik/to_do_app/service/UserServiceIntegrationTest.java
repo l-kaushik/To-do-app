@@ -1,7 +1,7 @@
 package in.lokeshkaushik.to_do_app.service;
 
-import in.lokeshkaushik.to_do_app.dto.UserDto;
-import in.lokeshkaushik.to_do_app.dto.UserRegistrationDto;
+import in.lokeshkaushik.to_do_app.dto.UserDto.UserDto;
+import in.lokeshkaushik.to_do_app.dto.UserDto.UserRegistrationDto;
 import in.lokeshkaushik.to_do_app.exception.UserAlreadyExistsException;
 import in.lokeshkaushik.to_do_app.repository.UserRepository;
 import jakarta.transaction.Transactional;

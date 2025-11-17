@@ -1,4 +1,4 @@
-package in.lokeshkaushik.to_do_app.dto;
+package in.lokeshkaushik.to_do_app.dto.UserDto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

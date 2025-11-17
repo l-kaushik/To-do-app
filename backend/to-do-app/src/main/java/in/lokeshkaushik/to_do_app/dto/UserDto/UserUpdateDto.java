@@ -1,8 +1,6 @@
-package in.lokeshkaushik.to_do_app.dto;
+package in.lokeshkaushik.to_do_app.dto.UserDto;
 
 import jakarta.validation.constraints.*;
-
-import java.util.UUID;
 
 public record UserUpdateDto(
         @Size(min = 3, max = 13, message = "Username must be between 3 and 13 characters.")

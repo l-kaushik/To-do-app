@@ -1,7 +1,10 @@
 package in.lokeshkaushik.to_do_app.service;
 
 import com.jayway.jsonpath.JsonPath;
-import in.lokeshkaushik.to_do_app.dto.*;
+import in.lokeshkaushik.to_do_app.dto.UserDto.UserDto;
+import in.lokeshkaushik.to_do_app.dto.UserDto.UserLoginDto;
+import in.lokeshkaushik.to_do_app.dto.UserDto.UserLoginResponseDto;
+import in.lokeshkaushik.to_do_app.dto.UserDto.UserRegistrationDto;
 import in.lokeshkaushik.to_do_app.repository.WorkspaceRepository;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -16,11 +19,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.ResultMatcher;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
