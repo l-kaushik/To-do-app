@@ -19,6 +19,12 @@ import java.util.UUID;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // Handle database saving failure
+    @ExceptionHandler(SaveFailedException.class)
+    public ResponseEntity<Object> handleSaveFailed(SaveFailedException ex){
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+    }
+
     // Handle user/workspace not found
     @ExceptionHandler({UserNotFoundException.class, WorkspaceNotFoundException.class, TaskNotFoundException.class})
     public ResponseEntity<Object> handleNotFound(RuntimeException ex){
@@ -26,7 +32,7 @@ public class GlobalExceptionHandler {
     }
 
     // Handle conflicts (like duplicate user, duplicate workspaces)
-    @ExceptionHandler({UserAlreadyExistsException.class, WorkspaceAlreadyExistsException.class})
+    @ExceptionHandler({UserAlreadyExistsException.class, WorkspaceAlreadyExistsException.class, TaskAlreadyExistsException.class})
     public ResponseEntity<Object> handleConflictExceptions(RuntimeException ex) {
         return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
     }

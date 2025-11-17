@@ -2,10 +2,7 @@ package in.lokeshkaushik.to_do_app.service;
 
 import in.lokeshkaushik.to_do_app.config.SecurityConfig;
 import in.lokeshkaushik.to_do_app.dto.UserDto.*;
-import in.lokeshkaushik.to_do_app.exception.InvalidCredentialsException;
-import in.lokeshkaushik.to_do_app.exception.NoChangesDetectedException;
-import in.lokeshkaushik.to_do_app.exception.UserAlreadyExistsException;
-import in.lokeshkaushik.to_do_app.exception.UserNotFoundException;
+import in.lokeshkaushik.to_do_app.exception.*;
 import in.lokeshkaushik.to_do_app.model.User;
 import in.lokeshkaushik.to_do_app.model.UserPrincipal;
 import in.lokeshkaushik.to_do_app.repository.UserRepository;
@@ -60,7 +57,7 @@ public class UserService {
         User saved = userRepository.save(user);
 
         if(saved.getId() == null){
-            throw new RuntimeException("Failed to save user");
+            throw new SaveFailedException("Failed to save user");
         }
 
         return userToUserDto(saved);

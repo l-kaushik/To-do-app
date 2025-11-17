@@ -1,12 +1,11 @@
 package in.lokeshkaushik.to_do_app.service;
 
+import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskCreateRequestDto;
 import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskDto;
 import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskListResponseDto;
 import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskResponseDto;
 import in.lokeshkaushik.to_do_app.dto.WorkspaceDtos.*;
-import in.lokeshkaushik.to_do_app.exception.TaskNotFoundException;
-import in.lokeshkaushik.to_do_app.exception.WorkspaceAlreadyExistsException;
-import in.lokeshkaushik.to_do_app.exception.WorkspaceNotFoundException;
+import in.lokeshkaushik.to_do_app.exception.*;
 import in.lokeshkaushik.to_do_app.model.Task;
 import in.lokeshkaushik.to_do_app.model.Workspace;
 import in.lokeshkaushik.to_do_app.repository.TaskRepository;
@@ -65,7 +64,7 @@ public class WorkspaceService {
 
         // TODO: Handle it using custom exception and in UserService as well
         if(saved.getId() == null){
-            throw new RuntimeException("Failed to save workspace");
+            throw new SaveFailedException("Failed to save workspace");
         }
 
         return new WorkspaceCreateResponseDto(saved.getUuid(), saved.getName(), saved.getTasks().size());
@@ -106,6 +105,26 @@ public class WorkspaceService {
         }
 
         return new TaskListResponseDto(fromTaskToTaskResponseDto(tasks));
+    }
+
+    public TaskResponseDto createTask(@NotNull UUID workspaceId, TaskCreateRequestDto taskCreateRequestDto) {
+        var name = taskCreateRequestDto.name();
+        var description = taskCreateRequestDto.description();
+        var completed = taskCreateRequestDto.completed();
+
+        if(taskRepository.existsByNameAndWorkspaceUuid(name, workspaceId)){
+            throw new TaskAlreadyExistsException("Task with name: " + name + " is already exists in workspace with UUID: " + workspaceId);
+        }
+
+        Workspace workspace = workspaceRepository.findByUuid(workspaceId).orElseThrow(IllegalStateException::new);
+
+        Task task = Task.builder().name(name).description(description).completed(completed).workspace(workspace).build();
+        Task saved = taskRepository.save(task);
+        if(saved.getId() == null){
+            throw new SaveFailedException("Failed to save task");
+        }
+
+        return fromTaskToTaskResponseDto(List.of(saved)).getFirst();
     }
 
     private UUID getUserId(){

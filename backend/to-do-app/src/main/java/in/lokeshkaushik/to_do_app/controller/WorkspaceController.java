@@ -1,5 +1,6 @@
 package in.lokeshkaushik.to_do_app.controller;
 
+import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskCreateRequestDto;
 import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskListResponseDto;
 import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskResponseDto;
 import in.lokeshkaushik.to_do_app.dto.WorkspaceDtos.*;
@@ -56,7 +57,11 @@ public class WorkspaceController {
         return ResponseEntity.ok(workspaceService.getTask(workspaceId, taskId));
     }
 
-    // post a task under a workspace
+    @PostMapping("/{workspaceId}/tasks")
+    public ResponseEntity<TaskResponseDto> createTask(@PathVariable @NotNull UUID workspaceId,
+                                                     @Valid @RequestBody TaskCreateRequestDto taskCreateRequestDto){
+        return ResponseEntity.ok(workspaceService.createTask(workspaceId, taskCreateRequestDto));
+    }
 
     // update a task under a workspace
 
