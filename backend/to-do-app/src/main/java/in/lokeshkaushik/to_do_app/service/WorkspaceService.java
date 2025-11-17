@@ -12,7 +12,6 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -85,6 +84,10 @@ public class WorkspaceService {
         workspace.setName(workspaceDto.name());
         Workspace saved = workspaceRepository.save(workspace);
         return new WorkspaceUpdateResponseDto(saved.getUuid(), saved.getName());
+    }
+
+    public Boolean taskExistsByName(@NotNull UUID workspaceId, String name) {
+        return taskRepository.existsByNameAndWorkspaceUuid(name, workspaceId);
     }
 
     public TaskResponseDto getTask(@NotNull UUID workspaceId, @NotNull UUID taskId) {

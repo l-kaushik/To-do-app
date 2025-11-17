@@ -10,7 +10,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -46,6 +45,11 @@ public class WorkspaceController {
     @GetMapping("/exists")
     public ResponseEntity<Boolean> workspaceExistsByName(@RequestParam String name){
         return ResponseEntity.ok(workspaceService.workspaceExistsByName(name));
+    }
+
+    @GetMapping("/{workspaceId}/tasks/exists")
+    public ResponseEntity<Boolean> taskExistsByName(@PathVariable @NotNull UUID workspaceId, @RequestParam String name){
+        return ResponseEntity.ok(workspaceService.taskExistsByName(workspaceId, name));
     }
 
     @GetMapping("/{workspaceId}/tasks")
