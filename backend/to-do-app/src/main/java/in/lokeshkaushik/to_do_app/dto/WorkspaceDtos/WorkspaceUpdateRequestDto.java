@@ -13,6 +13,6 @@ public record WorkspaceUpdateRequestDto(
 
         @NotBlank(message = "Workspace name cannot be empty")
         @Size(max = 100, message = "Workspace name must not exceed 100 characters")
-        @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "Username can only contain letters, numbers, and underscores.")
+        @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "Workspace name can only contain letters, numbers, and underscores.")
         String name){
 }

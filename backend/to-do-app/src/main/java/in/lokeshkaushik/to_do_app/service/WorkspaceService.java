@@ -1,9 +1,6 @@
 package in.lokeshkaushik.to_do_app.service;
 
-import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskCreateRequestDto;
-import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskDto;
-import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskListResponseDto;
-import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskResponseDto;
+import in.lokeshkaushik.to_do_app.dto.TaskDto.*;
 import in.lokeshkaushik.to_do_app.dto.WorkspaceDtos.*;
 import in.lokeshkaushik.to_do_app.exception.*;
 import in.lokeshkaushik.to_do_app.model.Task;
@@ -62,7 +59,6 @@ public class WorkspaceService {
 
         Workspace saved = workspaceRepository.save(workspace);
 
-        // TODO: Handle it using custom exception and in UserService as well
         if(saved.getId() == null){
             throw new SaveFailedException("Failed to save workspace");
         }
@@ -124,6 +120,23 @@ public class WorkspaceService {
             throw new SaveFailedException("Failed to save task");
         }
 
+        return fromTaskToTaskResponseDto(List.of(saved)).getFirst();
+    }
+
+    public TaskResponseDto updateTask(@NotNull UUID workspaceId, @Valid TaskUpdateRequestDto taskUpdateRequestDto) {
+        var uuid = taskUpdateRequestDto.uuid();
+        var name = taskUpdateRequestDto.name();
+        var description = taskUpdateRequestDto.description();
+        var completed = taskUpdateRequestDto.completed();
+
+        Task task = taskRepository.findByUuid(uuid)
+                .orElseThrow(() -> new TaskNotFoundException("Task with UUID " + uuid + " was expected to exist but not found"));
+
+        if(!task.getName().equals(name)) task.setName(name);
+        if(!task.getDescription().equals(description)) task.setDescription(description);
+        if(task.isCompleted() != completed) task.setCompleted(completed);
+
+        Task saved = taskRepository.save(task);
         return fromTaskToTaskResponseDto(List.of(saved)).getFirst();
     }
 
