@@ -1,11 +1,14 @@
 package in.lokeshkaushik.to_do_app.controller;
 
+import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskListResponseDto;
+import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskResponseDto;
 import in.lokeshkaushik.to_do_app.dto.WorkspaceDtos.*;
 import in.lokeshkaushik.to_do_app.service.WorkspaceService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -33,22 +36,25 @@ public class WorkspaceController {
         return ResponseEntity.ok(workspaceService.createWorkspace(workspaceDto));
     }
 
-    /* TODO: instead of 1 big chunky update workspace
-
-    create separate endpoints for add task, remove task, update task
-    and leave update workspace for only update name or other high level features not task related
-    * */
     @PutMapping("")
     public ResponseEntity<WorkspaceUpdateResponseDto> updateWorkspace(@Valid @RequestBody WorkspaceUpdateRequestDto workspaceDto){
         return ResponseEntity.ok(workspaceService.updateWorkspace(workspaceDto));
     }
 
-    @GetMapping("/exist")
+    @GetMapping("/exists")
     public ResponseEntity<Boolean> workspaceExistsByName(@RequestParam String name){
         return ResponseEntity.ok(workspaceService.workspaceExistsByName(name));
     }
 
-    // get task using taskId
+    @GetMapping("/{workspaceId}/tasks")
+    public ResponseEntity<TaskListResponseDto> getTasks(@PathVariable @NotNull UUID workspaceId){
+        return ResponseEntity.ok(workspaceService.getTasks(workspaceId));
+    }
+
+    @GetMapping("/{workspaceId}/tasks/{taskId}")
+    public ResponseEntity<TaskResponseDto> getTask(@PathVariable @NotNull UUID workspaceId, @PathVariable @NotNull UUID taskId){
+        return ResponseEntity.ok(workspaceService.getTask(workspaceId, taskId));
+    }
 
     // post a task under a workspace
 

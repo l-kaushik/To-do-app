@@ -1,17 +1,22 @@
 package in.lokeshkaushik.to_do_app.service;
 
 import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskDto;
+import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskListResponseDto;
 import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskResponseDto;
 import in.lokeshkaushik.to_do_app.dto.WorkspaceDtos.*;
+import in.lokeshkaushik.to_do_app.exception.TaskNotFoundException;
 import in.lokeshkaushik.to_do_app.exception.WorkspaceAlreadyExistsException;
 import in.lokeshkaushik.to_do_app.exception.WorkspaceNotFoundException;
 import in.lokeshkaushik.to_do_app.model.Task;
 import in.lokeshkaushik.to_do_app.model.Workspace;
+import in.lokeshkaushik.to_do_app.repository.TaskRepository;
 import in.lokeshkaushik.to_do_app.repository.WorkspaceRepository;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +28,9 @@ public class WorkspaceService {
 
     @Autowired
     WorkspaceRepository workspaceRepository;
+
+    @Autowired
+    TaskRepository taskRepository;
 
     public WorkspaceResponseDto getWorkspace(UUID workspaceId) {
         Workspace workspace = workspaceRepository.findByUuid(workspaceId)
@@ -82,6 +90,22 @@ public class WorkspaceService {
         workspace.setName(workspaceDto.name());
         Workspace saved = workspaceRepository.save(workspace);
         return new WorkspaceUpdateResponseDto(saved.getUuid(), saved.getName());
+    }
+
+    public TaskResponseDto getTask(@NotNull UUID workspaceId, @NotNull UUID taskId) {
+        Task task = taskRepository.findByUuid(taskId)
+                .orElseThrow(() -> new TaskNotFoundException("Task with UUID " + taskId + " was not found."));
+
+        return fromTaskToTaskResponseDto(List.of(task)).getFirst();
+    }
+
+    public TaskListResponseDto getTasks(@NotNull UUID workspaceId) {
+        List<Task> tasks = taskRepository.findAllByWorkspaceUuid(workspaceId);
+        if(tasks.isEmpty()){
+          throw new TaskNotFoundException("Workspace with UUID " + workspaceId + " does not have any task.");
+        }
+
+        return new TaskListResponseDto(fromTaskToTaskResponseDto(tasks));
     }
 
     private UUID getUserId(){

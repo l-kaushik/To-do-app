@@ -20,7 +20,7 @@ import java.util.UUID;
 public class GlobalExceptionHandler {
 
     // Handle user/workspace not found
-    @ExceptionHandler({UserNotFoundException.class, WorkspaceNotFoundException.class})
+    @ExceptionHandler({UserNotFoundException.class, WorkspaceNotFoundException.class, TaskNotFoundException.class})
     public ResponseEntity<Object> handleNotFound(RuntimeException ex){
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
