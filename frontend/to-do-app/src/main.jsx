@@ -5,6 +5,7 @@ import Layout from './Layout.jsx'
 import Home from './components/Home/Home.jsx'
 import Workspace from './components/Workspace/Workspace.jsx'
 import Login from './components/Login/Login.jsx'
+import "./index.css";
 
 const router = createBrowserRouter(
 	createRoutesFromElements(
