@@ -1,44 +1,75 @@
 import React, { useState } from 'react'
+import { apiClient } from '../../api/apiClient';
+import { isEmptyString } from '../../utils/dataValidation';
 
-function Login() {
+export default function Login() {
 	const [isSignUp, setIsSignUp] = useState(false);
 	const [username, setUsername] = useState('');
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
+	const [errorBox, setErrorBox] = useState('');
+	const [errors, setErrors] = useState({
+		username: false,
+		email: false,
+		identifier: false,
+		password: false
+	});
 
 	async function handleAuth(e){
 		e.preventDefault();		// prevent react refresh on form submit
+		setErrorBox("");
+		setErrors({
+			username: false,
+			email: false,
+			identifier: false,
+			password: false
+		});
 
-		if(isSignUp) {
-			// handle register api call
+		const validationErrors = validateAuthData({isSignUp, username, email, password});
+		if(Object.keys(validationErrors).length > 0) {
+			setErrors(prev => ({...prev, ...validationErrors}));
 			return;
 		}
 
-		// handle login api call
-		const requestBody = {
-			identifier: username,
-			password: password
-		}
-
 		try {
-			const res = await fetch("http://localhost:8080/api/users/login", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json"
-				},
-				body: JSON.stringify(requestBody)
-			});
-
-			if(!res.ok) {
-				const text = await res.text();
-				console.error("Failed response: ", text);
+			// register
+			if(isSignUp) {
+				const requestbody = {
+					username: username,
+					emailId: email,
+					password: password
+				}
+				const data = await apiClient("/api/users/register", "POST", requestBody)
+				console.log("Reponse: ", data);
 				return;
 			}
 
-			const data = await res.json();
+
+			// login
+			const requestBody = {
+				identifier: username,
+				password: password
+			}
+			
+			const data = await apiClient("/api/users/login", "POST", requestBody)
 			console.log("Reponse: ", data);
 		} catch (err) {
-			console.error("Network Error: ", err);
+			if(err.type === "NETWORK_ERROR") {
+				setErrorBox(err.message);
+				return;
+			}
+
+			if(err.status === 401) {
+				setErrorBox(err.message);
+
+				if(err.message.includes("email") || err.message.includes("username")) {
+					setErrors(prev => ({...prev, identifier: true}));
+				}
+
+				if(err.message.includes("password")) {
+					setErrors(prev => ({...prev, password: true}));
+				}
+			}
 		}
 	}
 
@@ -69,7 +100,7 @@ function Login() {
 					<input
 						type="text"
 						placeholder="Username"
-						className="p-2 rounded bg-gray-800 border border-gray-700"
+						className={`p-2 rounded bg-gray-800 border ${errors.username ? "border-red-500" : "border-gray-700"}`}
 						id="username"
 						value={username}
 						onChange={(event) => setUsername(event.target.value)}
@@ -77,7 +108,7 @@ function Login() {
 					<input
 						type="email"
 						placeholder="Email"
-						className="p-2 rounded bg-gray-800 border border-gray-700"
+						className={`p-2 rounded bg-gray-800 border ${errors.email ? "border-red-500" : "border-gray-700"}`}
 						id="email"
 						value={email}
 						onChange={(event) => setEmail(event.target.value)}
@@ -90,7 +121,7 @@ function Login() {
 					<input
 						type="text"
 						placeholder="Username or Email"
-						className="p-2 rounded bg-gray-800 border border-gray-700"
+						className={`p-2 rounded bg-gray-800 border ${errors.identifier ? "border-red-500" : "border-gray-700"}`}
 						id="identifier"
 						value={username}
 						onChange={(event) => setUsername(event.target.value)}
@@ -101,7 +132,7 @@ function Login() {
 				<input
 					type="password"
 					placeholder="Password"
-					className="p-2 rounded bg-gray-800 border border-gray-700"
+					className={`p-2 rounded bg-gray-800 border ${errors.password ? "border-red-500" : "border-gray-700"}`}
 					id="password"
 					value={password}
 					onChange={(event) => setPassword(event.target.value)}
@@ -113,9 +144,20 @@ function Login() {
 				</button>
 
 				</form>
+
+				<div className='pt-4 text-red-600' id='errorBox'>{errorBox}</div>
 			</div>
 		 </div>
     )
 }
 
-export default Login
+function validateAuthData({ isSignUp, username, email, password }) {
+	const errors = {};
+
+	if (!isSignUp && isEmptyString(username)) errors.identifier = true;
+	if (isSignUp && isEmptyString(username)) errors.username = true;
+	if (isSignUp && isEmptyString(email)) errors.email = true;
+	if (isEmptyString(password)) errors.password = true;
+
+	return errors;
+}
