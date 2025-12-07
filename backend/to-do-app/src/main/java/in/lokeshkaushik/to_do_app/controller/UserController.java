@@ -57,6 +57,12 @@ public class UserController {
         return ResponseEntity.ok(userDto);
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<UserDto> getMe(){
+        UserDto userDto = userService.getMe();
+        return ResponseEntity.ok(userDto);
+    }
+
     @PostMapping("/login")
     public ResponseEntity<UserLoginResponseDto> loginUser(@Valid @RequestBody UserLoginDto loginDto){
         UserLoginServiceResponseDto userLoginServiceResponseDto = userService.loginUser(loginDto);
@@ -64,7 +70,7 @@ public class UserController {
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .maxAge(3600)
+                .maxAge(7 * 24 * 60 * 60) // cookie last for 7 days
                 .sameSite("Strict")
                 .build();
 

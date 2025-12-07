@@ -69,6 +69,11 @@ public class UserService {
         return userToUserDto(user);
     }
 
+    public UserDto getMe() {
+        User user = getCurrentAuthenticatedUser();
+        return new UserDto(user.getUuid(), user.getUsername(), user.getEmailId());
+    }
+
     public UserLoginServiceResponseDto loginUser(@Valid UserLoginDto loginDto){
         try{
             Authentication authentication = authenticationManager.authenticate(
