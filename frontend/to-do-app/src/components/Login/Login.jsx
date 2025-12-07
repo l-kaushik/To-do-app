@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { isEmptyString } from '../../utils/dataValidation';
 import { loginUser, registerUser } from '../../api/todoApi';
+import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
 	const [isSignUp, setIsSignUp] = useState(false);
@@ -15,6 +16,7 @@ export default function Login() {
 		identifier: false,
 		password: false
 	});
+	const navigate = useNavigate();
 
 	function handleNetworkError(){
 		setErrorBox("Can't connect to the server. Please check your internet connection.");
@@ -35,7 +37,7 @@ export default function Login() {
 	const loginMutation = useMutation({
 		mutationFn: (body) => loginUser(body),
 		onSuccess: (data) => {
-			console.log("Login success, token:", data.token);
+			navigate("/");
 		},
 		onError: (error) => {
 			if(error.type === "NETWORK_ERROR") {
@@ -74,7 +76,7 @@ export default function Login() {
 
 		// register
 		if(isSignUp) {
-			const requestbody = {
+			const requestBody = {
 				username: username,
 				emailId: email,
 				password: password

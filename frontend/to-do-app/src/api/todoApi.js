@@ -4,6 +4,7 @@ const BASE_URL = 'http://localhost:8080';
 
 const axiosInstance = axios.create({
     baseURL: BASE_URL,
+    withCredentials: true,
 });
 
 axiosInstance.interceptors.response.use((response) => response, (error) => {
@@ -52,5 +53,12 @@ export const registerUser = async (userData) => {
 
 export const loginUser = async (credentials) => {
     const response = await axiosInstance.post("/api/users/login", credentials);
+    return response.data;
+}
+
+// user endpoints
+
+export const getUser = async () => {
+    const response = await axiosInstance.get("/api/users/me");
     return response.data;
 }
