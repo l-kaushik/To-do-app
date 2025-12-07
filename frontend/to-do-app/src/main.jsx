@@ -6,6 +6,7 @@ import Home from './components/Home/Home.jsx'
 import Workspace from './components/Workspace/Workspace.jsx'
 import Login from './components/Login/Login.jsx'
 import "./index.css";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const router = createBrowserRouter(
 	createRoutesFromElements(
@@ -19,8 +20,12 @@ const router = createBrowserRouter(
 	)
 );
 
+const queryClient = new QueryClient();
+
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <RouterProvider router = {router} />
-  </StrictMode>,
+	<QueryClientProvider client={queryClient}>
+		<StrictMode>
+			<RouterProvider router = {router} />
+		</StrictMode>
+	</QueryClientProvider>
 )

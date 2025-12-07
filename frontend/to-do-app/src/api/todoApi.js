@@ -1,0 +1,56 @@
+import axios from 'axios';
+
+const BASE_URL = 'http://localhost:8080';
+
+const axiosInstance = axios.create({
+    baseURL: BASE_URL,
+});
+
+axiosInstance.interceptors.response.use((response) => response, (error) => {
+    const customError = createCustomError(error);
+    console.error("API Error: ", customError);
+    return Promise.reject(customError);
+});
+
+function createCustomError(error){
+    if(!error.response && error.request) {
+        return {
+            type: "NETWORK_ERROR",
+            message: "Cannot reach the server, Check your internet connection.",
+        };
+    }
+
+    const status = error.response.status;
+    const data = error.response.data;
+    const message = data.message || "Invalid request";
+
+    // 400-level errors
+    if (status === 400) {
+        return {
+            type: "BAD_REQUEST",
+            message: message,
+        };
+    }
+
+    if(status === 401){
+        return {
+            type: "Unauthorized",
+            message: message,
+        }
+    }
+
+    return error.response.data;
+}
+
+
+// Authentication
+
+export const registerUser = async (userData) => {
+    const response = await axiosInstance.post("/api/users/register", userData);
+    return response.data;
+};
+
+export const loginUser = async (credentials) => {
+    const response = await axiosInstance.post("/api/users/login", credentials);
+    return response.data;
+}

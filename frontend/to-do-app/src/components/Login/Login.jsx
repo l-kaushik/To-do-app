@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { apiClient } from '../../api/apiClient';
+import { useMutation } from '@tanstack/react-query'
 import { isEmptyString } from '../../utils/dataValidation';
+import { loginUser, registerUser } from '../../api/todoApi';
 
 export default function Login() {
 	const [isSignUp, setIsSignUp] = useState(false);
@@ -13,6 +14,46 @@ export default function Login() {
 		email: false,
 		identifier: false,
 		password: false
+	});
+
+	function handleNetworkError(){
+		setErrorBox("Can't connect to the server. Please check your internet connection.");
+	}
+
+	const registerMutation = useMutation({
+		mutationFn: (body) => registerUser(body),
+		onSuccess: (data) => {
+			console.log("Registration success: ", data);
+		},
+		onError: (error) => {
+			if(error.type == "NETWORK_ERROR") {
+				handleNetworkError();
+			}
+		}
+	});
+
+	const loginMutation = useMutation({
+		mutationFn: (body) => loginUser(body),
+		onSuccess: (data) => {
+			console.log("Login success, token:", data.token);
+		},
+		onError: (error) => {
+			if(error.type === "NETWORK_ERROR") {
+				handleNetworkError();
+				return;
+			}
+
+			if(error.type === "Unauthorized") {
+				setErrorBox(error.message);
+
+				if(error.message.includes("password")) {
+					setErrors(prev => ({ ...prev, password: true }));
+				}
+				else if(error.message.includes("email") || error.message.includes("username")) {
+					setErrors(prev => ({ ...prev, identifier: true }));
+				}
+			}
+		},
 	});
 
 	async function handleAuth(e){
@@ -31,45 +72,24 @@ export default function Login() {
 			return;
 		}
 
-		try {
-			// register
-			if(isSignUp) {
-				const requestbody = {
-					username: username,
-					emailId: email,
-					password: password
-				}
-				const data = await apiClient("/api/users/register", "POST", requestBody)
-				console.log("Reponse: ", data);
-				return;
+		// register
+		if(isSignUp) {
+			const requestbody = {
+				username: username,
+				emailId: email,
+				password: password
 			}
-
-
+			registerMutation.mutate(requestBody);
+			return;
+		}
+		else{
 			// login
 			const requestBody = {
 				identifier: username,
 				password: password
 			}
-			
-			const data = await apiClient("/api/users/login", "POST", requestBody)
-			console.log("Reponse: ", data);
-		} catch (err) {
-			if(err.type === "NETWORK_ERROR") {
-				setErrorBox(err.message);
-				return;
-			}
-
-			if(err.status === 401) {
-				setErrorBox(err.message);
-
-				if(err.message.includes("email") || err.message.includes("username")) {
-					setErrors(prev => ({...prev, identifier: true}));
-				}
-
-				if(err.message.includes("password")) {
-					setErrors(prev => ({...prev, password: true}));
-				}
-			}
+				
+			loginMutation.mutate(requestBody);
 		}
 	}
 
@@ -138,7 +158,10 @@ export default function Login() {
 					onChange={(event) => setPassword(event.target.value)}
 				/>
 
-				<button className="mt-3 py-2 bg-blue-600 rounded hover:bg-blue-700 transition"
+				<button className="mt-3 py-2 bg-blue-600 rounded hover:bg-blue-700 transition
+				active:bg-blue-600
+				disabled:bg-blue-400 disabled:cursor-not-allowed"
+				disabled={isSignUp ? registerMutation.isPending : loginMutation.isPending}
 				onClick={handleAuth}>
 					{isSignUp ? "Create Account" : "Sign In"}
 				</button>
