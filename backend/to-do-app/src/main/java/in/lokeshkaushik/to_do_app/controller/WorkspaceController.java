@@ -16,6 +16,8 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/workspaces")
+// Used for local dev to allow fronted to call backend
+//@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class WorkspaceController {
     @Autowired
     WorkspaceService workspaceService;
