@@ -7,11 +7,16 @@ import Workspace from './components/Workspace/Workspace.jsx'
 import Login from './components/Login/Login.jsx'
 import "./index.css";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute.jsx'
 
 const router = createBrowserRouter(
 	createRoutesFromElements(
 		<>
-		<Route path = "/" element={ <Layout /> }>
+		<Route path = "/" element={ 
+			<ProtectedRoute>
+				<Layout /> 
+			</ProtectedRoute>
+			}>
 			<Route index element={<Home/>}/>
 			<Route path = "/workspace/:id" element={<Workspace/>}/>
 		</Route>
