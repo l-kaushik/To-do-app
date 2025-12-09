@@ -9,6 +9,7 @@ import in.lokeshkaushik.to_do_app.service.WorkspaceService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +27,16 @@ public class WorkspaceController {
     @GetMapping("")
     public ResponseEntity<WorkspaceIdsResponseDto> getWorkspaces(){
         return ResponseEntity.ok(workspaceService.getWorkspaces());
+    }
+
+    // only get called when api call include ?full=true
+    // TODO: Handle full=false cases
+    @GetMapping(value = "", params = "full=true")
+    public ResponseEntity<Page<WorkspaceFullResponseDto>> getFullWorkspaces(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+            ) {
+        return ResponseEntity.ok(workspaceService.getFullWorkspaces(page, size));
     }
 
     // Return data of single workspace using uuid

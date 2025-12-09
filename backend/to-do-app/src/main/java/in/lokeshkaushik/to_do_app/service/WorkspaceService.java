@@ -10,6 +10,9 @@ import in.lokeshkaushik.to_do_app.repository.WorkspaceRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -39,6 +42,11 @@ public class WorkspaceService {
     public WorkspaceIdsResponseDto getWorkspaces() {
        List<UUID> ids = workspaceRepository.findAllIdsByOwnerId(getUserId());
        return new WorkspaceIdsResponseDto(ids);
+    }
+
+    public Page<WorkspaceFullResponseDto> getFullWorkspaces(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return workspaceRepository.findAllWithTaskCount(pageable);
     }
 
     public WorkspaceCreateResponseDto createWorkspace(@Valid WorkspaceCreateRequestDto workspaceDto) {

@@ -1,6 +1,9 @@
 package in.lokeshkaushik.to_do_app.repository;
 
+import in.lokeshkaushik.to_do_app.dto.WorkspaceDtos.WorkspaceFullResponseDto;
 import in.lokeshkaushik.to_do_app.model.Workspace;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,4 +22,14 @@ public interface WorkspaceRepository extends JpaRepository<Workspace, Long> {
     boolean existsByUuid(UUID uuid);
 
     Optional<Workspace> findByUuid(UUID uuid);
+
+    @Query("""
+            SELECT new in.lokeshkaushik.to_do_app.dto.WorkspaceDtos.WorkspaceFullResponseDto(
+                    w.uuid,
+                    w.name,
+                    SIZE(w.tasks)
+            )
+            FROM Workspace w
+        """)
+    Page<WorkspaceFullResponseDto> findAllWithTaskCount(Pageable pageable);
 }
