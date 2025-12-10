@@ -8,6 +8,7 @@ import Login from './components/Login/Login.jsx'
 import "./index.css";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute.jsx'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 const router = createBrowserRouter(
 	createRoutesFromElements(
@@ -31,6 +32,7 @@ createRoot(document.getElementById('root')).render(
 	<QueryClientProvider client={queryClient}>
 		<StrictMode>
 			<RouterProvider router = {router} />
+			<ReactQueryDevtools />
 		</StrictMode>
 	</QueryClientProvider>
 )
