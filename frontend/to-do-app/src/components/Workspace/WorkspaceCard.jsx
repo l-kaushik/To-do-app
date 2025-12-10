@@ -1,15 +1,14 @@
 import React from 'react'
 
-function WorkspaceCard() {
+function WorkspaceCard({uuid, name, taskCount}) {
   return (
     <div className='card-size text-xl md:text-2xl text-white flex flex-col gap-2 p-4 border-gray-500 border-2 rounded-2xl bg-gray-700 min-h-fit transition-all duration-200 hover:scale-[1.03] hover:shadow-lg hover:shadow-black/30'>
-        <span className='text-green-500'>Workspace Name</span>
+        <span className='text-2xl text-green-500'>{name}</span>
         <hr />
-        <ul className="list-disc px-6 text-gray-300">
-            <li>12 Tasks</li>
-            <li>Last updated 2 days ago</li>
-            <li>Last updated task id</li>
-            <li>Date created</li>
+        <ul className="list-disc px-6">
+            <li className='text-xl text-gray-400'>UUID: <p className='inline text-white'>{uuid}</p></li>
+            <li className='text-xl text-gray-400'>No. Of Tasks: <p className='inline text-white'>{taskCount}</p></li>
+            <li className='text-xl text-gray-400'>Date Created: <p className='inline text-white'>{}</p></li>
         </ul>
     </div>
   )
