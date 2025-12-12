@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import TaskCard from './TaskCard.jsx'
 import { getTasks } from '../../api/todoApi.js';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
 function Workspace() {
 	const {uuid} = useParams();   // workspace uuid
@@ -11,7 +11,7 @@ function Workspace() {
 	const [newTask, setNewTask] = useState("");
 	const [page, setPage] = useState(0);
 	const [totalPage, setTotalPage] = useState(0);
-	const size = 10;
+	const size = 5;
 
 	function handleInputChange(event) {
 		setNewTask(event.target.value);
@@ -58,6 +58,23 @@ function Workspace() {
 		}
 	}, [taskQuery.data]);
 
+	// Intersection Observer ref
+	const bottomRef = useRef(null);
+
+	useEffect(() => {
+		if(!bottomRef.current) return;
+		if(page > totalPage) return;
+		const observer = new IntersectionObserver((entries) => {
+			const entry = entries[0];
+			if(entry.isIntersecting && !taskQuery.isFetching) {
+				setPage(prev => prev + 1);
+			}
+		});
+		observer.observe(bottomRef.current);
+
+		return () => observer.disconnect();
+	}, [taskQuery.isFetching]);
+
 	return (
 		<div className='min-h-dvh bg-gray-800'>
 			<div className='flex flex-col items-center p-4 gap-10'>
@@ -82,6 +99,8 @@ function Workspace() {
 						)
 					}
 				</ol>
+				{/* sentinel element */}
+				<div ref={bottomRef}></div>
 			</div>
 		</div>
 	)
