@@ -1,14 +1,17 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import TaskCard from './TaskCard.jsx'
+import { getTasks } from '../../api/todoApi.js';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 function Workspace() {
-	const {id} = useParams();   // workspace id
+	const {uuid} = useParams();   // workspace uuid
 
-	// NOTE: upgrade to use linked list for O(1) moving operation
-
-	const [tasks, setTasks] = useState([]);
+	const [allTasks, setAllTasks] = useState([]);
 	const [newTask, setNewTask] = useState("");
+	const [page, setPage] = useState(0);
+	const [totalPage, setTotalPage] = useState(0);
+	const size = 10;
 
 	function handleInputChange(event) {
 		setNewTask(event.target.value);
@@ -16,29 +19,44 @@ function Workspace() {
 
 	function addTask(){
 		if(newTask.trim() === "") return;
-		setTasks(t => [...t, newTask]);
+		setAllTasks(t => [...t, newTask]);
 		setNewTask("")
 	}
 
 	function deleteTask(index){
-		setTasks(t => t.filter((_, i) => i !== index));
+		setAllTasks(t => t.filter((_, i) => i !== index));
 	}
 
 	function moveTaskUp(index){
 		if(index === 0) return;
 
-		const updatedTasks = [...tasks];
+		const updatedTasks = [...allTasks];
 		[updatedTasks[index], updatedTasks[index - 1]] = [updatedTasks[index - 1], updatedTasks[index]];
-		setTasks(updatedTasks);
+		setAllTasks(updatedTasks);
 	}
 
 	function moveTaskDown(index){
 		if(index === tasks.length - 1) return;
 
-		const updatedTasks = [...tasks];
+		const updatedTasks = [...allTasks];
 		[updatedTasks[index], updatedTasks[index + 1]] = [updatedTasks[index + 1], updatedTasks[index]];
-		setTasks(updatedTasks);
+		setAllTasks(updatedTasks);
 	}
+
+	const taskQuery = useQuery({
+		queryKey: ["task", page],
+		queryFn: () => getTasks(uuid, page, size),
+		keepPreviousData: true,
+	});
+
+	const tasks = taskQuery.data?.content || [];
+
+	useEffect(() => {
+		if(taskQuery.data?.content) {
+			setAllTasks(prev => [...prev, ...taskQuery.data.content]);
+			setTotalPage(taskQuery.data.page.totalPages);
+		}
+	}, [taskQuery.data]);
 
 	return (
 		<div className='min-h-dvh bg-gray-800'>
@@ -52,10 +70,10 @@ function Workspace() {
 				</div>
 				<ol className='w-full px-4 flex flex-col items-center gap-4'>
 					{
-						tasks.map((task, index) => 
+						allTasks.map((task, index) => 
 							<TaskCard 
-								text={task} 
-								key={index} 
+								key={task.uuid} 
+								text={task.description} 
 								index={index}
 								onDelete={deleteTask} 
 								onMoveUp={moveTaskUp} 

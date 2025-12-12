@@ -69,3 +69,8 @@ export const getFullWorkspaces = async(page = 0, size = 10) => {
     const response = await axiosInstance.get(`/api/workspaces?full=true&page=${page}&size=${size}`);
     return response.data;
 }
+
+export const getTasks = async(uuid, page = 0, size = 10) => {
+    const response = await axiosInstance.get(`/api/workspaces/${uuid}/tasks?page=${page}&size=${size}`);
+    return response.data;
+}

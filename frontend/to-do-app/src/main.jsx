@@ -19,7 +19,7 @@ const router = createBrowserRouter(
 			</ProtectedRoute>
 			}>
 			<Route index element={<Home/>}/>
-			<Route path = "/workspace/:id" element={<Workspace/>}/>
+			<Route path = "/workspace/:uuid" element={<Workspace/>}/>
 		</Route>
 		<Route path = "/login" element={<Login/>}/>
 		</>
