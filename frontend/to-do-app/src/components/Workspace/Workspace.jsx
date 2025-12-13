@@ -3,77 +3,48 @@ import { useParams } from 'react-router-dom'
 import TaskCard from './TaskCard.jsx'
 import { getTasks } from '../../api/todoApi.js';
 import { useQuery } from '@tanstack/react-query';
+import useInfinitePagination from '../../utils/useInfinitePagination.js';
 
 function Workspace() {
 	const {uuid} = useParams();   // workspace uuid
-
-	const [allTasks, setAllTasks] = useState([]);
 	const [newTask, setNewTask] = useState("");
-	const [page, setPage] = useState(0);
-	const [totalPage, setTotalPage] = useState(0);
-	const size = 5;
+
+	const {
+		items: tasks,
+		bottomRef,
+		isLoading,
+		isError,
+	} = useInfinitePagination({
+		queryKey: ['tasks', uuid],
+		queryFn: (page, size) => getTasks(uuid, page, size),
+		size: 10,
+		enabled: !!uuid,
+	});
 
 	function handleInputChange(event) {
 		setNewTask(event.target.value);
 	}
 
+	// TODO: instead of modifying the actual state from useInfinitePagination hook, perform delete and move api calls.
+	// TODO: use DECIMAL fraction for position/move operations.
+
 	function addTask(){
 		if(newTask.trim() === "") return;
-		setAllTasks(t => [...t, newTask]);
+		setAllItems(t => [...t, newTask]);
 		setNewTask("")
 	}
 
 	function deleteTask(index){
-		setAllTasks(t => t.filter((_, i) => i !== index));
+
 	}
 
 	function moveTaskUp(index){
-		if(index === 0) return;
 
-		const updatedTasks = [...allTasks];
-		[updatedTasks[index], updatedTasks[index - 1]] = [updatedTasks[index - 1], updatedTasks[index]];
-		setAllTasks(updatedTasks);
 	}
 
 	function moveTaskDown(index){
-		if(index === tasks.length - 1) return;
 
-		const updatedTasks = [...allTasks];
-		[updatedTasks[index], updatedTasks[index + 1]] = [updatedTasks[index + 1], updatedTasks[index]];
-		setAllTasks(updatedTasks);
 	}
-
-	const taskQuery = useQuery({
-		queryKey: ["task", page],
-		queryFn: () => getTasks(uuid, page, size),
-		keepPreviousData: true,
-	});
-
-	const tasks = taskQuery.data?.content || [];
-
-	useEffect(() => {
-		if(taskQuery.data?.content) {
-			setAllTasks(prev => [...prev, ...taskQuery.data.content]);
-			setTotalPage(taskQuery.data.page.totalPages);
-		}
-	}, [taskQuery.data]);
-
-	// Intersection Observer ref
-	const bottomRef = useRef(null);
-
-	useEffect(() => {
-		if(!bottomRef.current) return;
-		if(page > totalPage) return;
-		const observer = new IntersectionObserver((entries) => {
-			const entry = entries[0];
-			if(entry.isIntersecting && !taskQuery.isFetching) {
-				setPage(prev => prev + 1);
-			}
-		});
-		observer.observe(bottomRef.current);
-
-		return () => observer.disconnect();
-	}, [taskQuery.isFetching]);
 
 	return (
 		<div className='min-h-dvh bg-gray-800'>
@@ -87,7 +58,7 @@ function Workspace() {
 				</div>
 				<ol className='w-full px-4 flex flex-col items-center gap-4'>
 					{
-						allTasks.map((task, index) => 
+						tasks.map((task, index) => 
 							<TaskCard 
 								key={task.uuid} 
 								text={task.description} 
@@ -99,6 +70,9 @@ function Workspace() {
 						)
 					}
 				</ol>
+				{isLoading && <p className='text-white text-2xl'>Loading...</p>}
+				{isError && <p className='text-red-500 text-2xl'>*Error fetching tasks</p>}
+				{(tasks.length === 0) && <p className='text-white text-2xl'>No task found, add task using above input box.</p>}
 				{/* sentinel element */}
 				<div ref={bottomRef}></div>
 			</div>

@@ -2,49 +2,24 @@ import React, { useEffect, useState, useRef } from 'react'
 import WorkspaceCard from '../Workspace/WorkspaceCard.jsx'
 import { useQuery } from '@tanstack/react-query';
 import { getFullWorkspaces } from '../../api/todoApi.js';
+import useInfinitePagination from '../../utils/useInfinitePagination.js';
 
 function Home() {
-	const [allWorkspaces, setAllWorkspaces] = useState([]);	// store all pages combined
-	const [page, setPage] = useState(0);
-	const [totalPage, setTotalPage] = useState(0);
-	const size = 10;
-
 	const handleAddCard = () => {
 		console.log("card added");
 		// TODO: show a pop up to create workspace then send a api call of post create workspace
 	}
 
-	const workspaceQuery = useQuery({
-		queryKey: ["workspaces", page],
-		queryFn: () => getFullWorkspaces(page, size),
-		keepPreviousData: true,
+	const {
+		items: workspaces,
+		bottomRef,
+		isLoading,
+		isError,
+	} = useInfinitePagination({
+		queryKey: ['workspaces'],
+		queryFn: (page, size) => getFullWorkspaces(page, size),
+		size: 10,
 	});
-
-	const workspaces = workspaceQuery.data?.content || [];
-
-	useEffect(() => {
-		if(workspaceQuery.data?.content) {
-			setAllWorkspaces(prev => [...prev, ...workspaceQuery.data.content]);
-			setTotalPage(workspaceQuery.data.page.totalPages);
-		}
-	}, [workspaceQuery.data]);
-
-	// Intersection Observer ref
-	const bottomRef = useRef(null);
-
-	useEffect(() => {
-		if(!bottomRef.current) return;
-		if(page > totalPage) return;
-		const observer = new IntersectionObserver((entries) => {
-			const entry = entries[0];
-			if(entry.isIntersecting && !workspaceQuery.isFetching) {
-				setPage(prev => prev + 1);
-			}
-		});
-		observer.observe(bottomRef.current);
-
-		return () => observer.disconnect();
-	}, [workspaceQuery.isFetching]);
 
 	return (
 		<main className='min-h-dvh bg-gray-800'>
@@ -53,10 +28,10 @@ function Home() {
 					+ Add Workspace
 				</button>
 
-				{workspaceQuery.isLoading && <><br/><p>Loading...</p></>}
-				{workspaceQuery.isError && <p>Error fetching workspaces</p>}
+				{isLoading && <p className='text-white text-2xl'>Loading...</p>}
+				{isError && <p className='text-red-500 text-2xl'>*Error fetching workspaces</p>}
 
-				{allWorkspaces.map((workspace) => (
+				{workspaces.map((workspace) => (
 					<WorkspaceCard 
 						key={workspace.uuid}
 						uuid={workspace.uuid}
