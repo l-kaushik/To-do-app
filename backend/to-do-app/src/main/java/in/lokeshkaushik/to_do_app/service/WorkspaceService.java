@@ -30,12 +30,10 @@ public class WorkspaceService {
     @Autowired
     TaskRepository taskRepository;
 
-    public WorkspaceResponseDto getWorkspace(UUID workspaceId) {
-        Workspace workspace = workspaceRepository.findByUuid(workspaceId)
-                .orElseThrow(() -> new WorkspaceNotFoundException("Workspace is not present or invalid UUID provided."));
-
-        // TODO: Add limit on how much tasks can be fetched at once
-        return new WorkspaceResponseDto(workspace.getUuid(), workspace.getName(), fromTaskToTaskResponseDto(workspace.getTasks()));
+    public WorkspaceMetaDto getWorkspace(UUID workspaceId) {
+        return workspaceRepository.findWorkspaceMeta(workspaceId)
+                .orElseThrow(() ->
+                        new WorkspaceNotFoundException("Workspace is not present or invalid UUID provided."));
     }
 
     // TODO: Add limit on how much ids can be fetched at once
@@ -44,7 +42,7 @@ public class WorkspaceService {
        return new WorkspaceIdsResponseDto(ids);
     }
 
-    public Page<WorkspaceFullResponseDto> getFullWorkspaces(int page, int size) {
+    public Page<WorkspaceMetaDto> getFullWorkspaces(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return workspaceRepository.findAllWithTaskCount(pageable);
     }
@@ -105,13 +103,9 @@ public class WorkspaceService {
         return fromTaskToTaskResponseDto(List.of(task)).getFirst();
     }
 
-    public TaskListResponseDto getTasks(@NotNull UUID workspaceId) {
-        List<Task> tasks = taskRepository.findAllByWorkspaceUuid(workspaceId);
-        if(tasks.isEmpty()){
-          throw new TaskNotFoundException("Workspace with UUID " + workspaceId + " does not have any task.");
-        }
-
-        return new TaskListResponseDto(fromTaskToTaskResponseDto(tasks));
+    public Page<TaskResponseDto> getTasks(@NotNull UUID workspaceId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return taskRepository.findAllWithWorkspaceUuid(workspaceId, pageable);
     }
 
     public TaskResponseDto createTask(@NotNull UUID workspaceId, TaskCreateRequestDto taskCreateRequestDto) {

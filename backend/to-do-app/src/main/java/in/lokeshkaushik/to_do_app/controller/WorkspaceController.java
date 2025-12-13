@@ -32,16 +32,14 @@ public class WorkspaceController {
     // only get called when api call include ?full=true
     // TODO: Handle full=false cases
     @GetMapping(value = "", params = "full=true")
-    public ResponseEntity<Page<WorkspaceFullResponseDto>> getFullWorkspaces(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-            ) {
+    public ResponseEntity<Page<WorkspaceMetaDto>> getFullWorkspaces(
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(workspaceService.getFullWorkspaces(page, size));
     }
 
-    // Return data of single workspace using uuid
+    // Return meta-data of single workspace using uuid
     @GetMapping("/{workspaceId}")
-    public ResponseEntity<WorkspaceResponseDto> getWorkspace(@PathVariable @NotNull UUID workspaceId){
+    public ResponseEntity<WorkspaceMetaDto> getWorkspace(@PathVariable @NotNull UUID workspaceId){
         return ResponseEntity.ok(workspaceService.getWorkspace(workspaceId));
     }
 
@@ -66,8 +64,9 @@ public class WorkspaceController {
     }
 
     @GetMapping("/{workspaceId}/tasks")
-    public ResponseEntity<TaskListResponseDto> getTasks(@PathVariable @NotNull UUID workspaceId){
-        return ResponseEntity.ok(workspaceService.getTasks(workspaceId));
+    public ResponseEntity<Page<TaskResponseDto>> getTasks(@PathVariable @NotNull UUID workspaceId,
+       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
+        return ResponseEntity.ok(workspaceService.getTasks(workspaceId, page , size));
     }
 
     @GetMapping("/{workspaceId}/tasks/{taskId}")

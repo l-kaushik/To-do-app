@@ -1,6 +1,6 @@
 package in.lokeshkaushik.to_do_app.repository;
 
-import in.lokeshkaushik.to_do_app.dto.WorkspaceDtos.WorkspaceFullResponseDto;
+import in.lokeshkaushik.to_do_app.dto.WorkspaceDtos.WorkspaceMetaDto;
 import in.lokeshkaushik.to_do_app.model.Workspace;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,12 +24,19 @@ public interface WorkspaceRepository extends JpaRepository<Workspace, Long> {
     Optional<Workspace> findByUuid(UUID uuid);
 
     @Query("""
-            SELECT new in.lokeshkaushik.to_do_app.dto.WorkspaceDtos.WorkspaceFullResponseDto(
-                    w.uuid,
-                    w.name,
-                    SIZE(w.tasks)
+            SELECT new in.lokeshkaushik.to_do_app.dto.WorkspaceDtos.WorkspaceMetaDto(
+                    w.uuid, w.name, SIZE(w.tasks)
             )
             FROM Workspace w
         """)
-    Page<WorkspaceFullResponseDto> findAllWithTaskCount(Pageable pageable);
+    Page<WorkspaceMetaDto> findAllWithTaskCount(Pageable pageable);
+
+    @Query("""
+            SELECT new in.lokeshkaushik.to_do_app.dto.WorkspaceDtos.WorkspaceMetaDto(
+                w.uuid, w.name, SIZE(w.tasks)
+            )
+            FROM Workspace w
+            WHERE w.uuid = :uuid
+            """)
+    Optional<WorkspaceMetaDto> findWorkspaceMeta(UUID uuid);
 }
