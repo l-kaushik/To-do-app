@@ -23,7 +23,7 @@ function createCustomError(error){
 
     const status = error.response.status;
     const data = error.response.data;
-    const message = data.message || "Invalid request";
+    const message = data.message || data || "Invalid Request";
 
     // 400-level errors
     if (status === 400) {
@@ -35,7 +35,14 @@ function createCustomError(error){
 
     if(status === 401){
         return {
-            type: "Unauthorized",
+            type: "UNAUTHORIZED",
+            message: message,
+        }
+    }
+
+    if(status === 409){
+        return {
+            type: "CONFLICT",
             message: message,
         }
     }
@@ -47,7 +54,7 @@ function createCustomError(error){
 // Authentication
 
 export const registerUser = async (userData) => {
-    const response = await axiosInstance.post("/api/users/register", userData);
+    const response = await axiosInstance.post("/api/users/", userData);
     return response.data;
 };
 

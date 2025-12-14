@@ -9,7 +9,8 @@ export default function Login() {
 	const [username, setUsername] = useState('');
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
-	const [errorBox, setErrorBox] = useState('');
+	const [responseBox, setResponseBox] = useState('');
+	const [responseBoxError, setResponseBoxError] = useState(true);
 	const [errors, setErrors] = useState({
 		username: false,
 		email: false,
@@ -19,17 +20,70 @@ export default function Login() {
 	const navigate = useNavigate();
 
 	function handleNetworkError(){
-		setErrorBox("Can't connect to the server. Please check your internet connection.");
+		setResponseBoxError(true);
+		setResponseBox("Can't connect to the server. Please check your internet connection.");
+	}
+
+	function resetStates() {
+		setUsername("");
+		setEmail("");
+		setPassword("");
+		setResponseBox("");
+		setResponseBoxError(true);
+		setErrors({
+			username: false,
+			email: false,
+			identifier: false,
+			password: false
+		});
 	}
 
 	const registerMutation = useMutation({
 		mutationFn: (body) => registerUser(body),
 		onSuccess: (data) => {
-			console.log("Registration success: ", data);
+			setResponseBoxError(false);
+			setResponseBox("Account created successfully! Please go to Sign In section.");
+			setUsername("");
+			setEmail("");
+			setPassword("");
 		},
 		onError: (error) => {
-			if(error.type == "NETWORK_ERROR") {
+			if(error.type === "NETWORK_ERROR") {
 				handleNetworkError();
+			}
+			else if(error.type === "CONFLICT") {
+				setResponseBoxError(true);
+				setResponseBox(error?.message);
+
+				if(error.message.includes("password")) {
+					setErrors(prev => ({ ...prev, password: true }));
+				}
+				else if(error.message.includes("email")) {
+					setErrors(prev => ({ ...prev, email: true }));
+				}
+				else if(error.message.includes("username")){
+					setErrors(prev => ({...prev, username: true}));
+				}
+			}
+			else if(error.type === "BAD_REQUEST"){
+				const errors = error?.message?.errors;
+
+				if (!errors) return;
+				if (errors.password) {
+					setErrors(prev => ({ ...prev, password: true }));
+					setResponseBox(errors.password);
+				}
+
+				if (errors.email) {
+					setErrors(prev => ({ ...prev, email: true }));
+					setResponseBox(errors.email);
+				}
+
+				if (errors.username) {
+					setErrors(prev => ({ ...prev, username: true }));
+					setResponseBox("Invalid username, must start with a letter and can contain only alphanumeric characters");
+				}
+
 			}
 		}
 	});
@@ -45,8 +99,8 @@ export default function Login() {
 				return;
 			}
 
-			if(error.type === "Unauthorized") {
-				setErrorBox(error.message);
+			if(error.type === "UNAUTHORIZED") {
+				setResponseBox(error.message);
 
 				if(error.message.includes("password")) {
 					setErrors(prev => ({ ...prev, password: true }));
@@ -60,7 +114,7 @@ export default function Login() {
 
 	async function handleAuth(e){
 		e.preventDefault();		// prevent react refresh on form submit
-		setErrorBox("");
+		setResponseBox("");
 		setErrors({
 			username: false,
 			email: false,
@@ -102,13 +156,19 @@ export default function Login() {
 				<div className="flex mb-6">
 					<button
 						className={`flex-1 py-2 ${!isSignUp ? "bg-gray-700" : "bg-gray-800"} rounded-l hover:bg-gray-600 transition`}
-						onClick={() => setIsSignUp(false)}
+						onClick={() => { 
+							resetStates(); 
+							setIsSignUp(false)
+						}}
 					>
 						Sign In
 					</button>
 					<button
 						className={`flex-1 py-2 ${isSignUp ? "bg-gray-700" : "bg-gray-800"} rounded-r hover:bg-gray-600 transition`}
-						onClick={() => setIsSignUp(true)}
+						onClick={() => {
+							resetStates();
+							setIsSignUp(true)
+						}}
 					>
 						Sign Up
 					</button>
@@ -170,7 +230,7 @@ export default function Login() {
 
 				</form>
 
-				<div className='pt-4 text-red-600' id='errorBox'>{errorBox}</div>
+				<div className={`pt-4 ${responseBoxError ? "text-red-600" : "text-green-600"}`} id='responseBox'>{responseBox}</div>
 			</div>
 		 </div>
     )
