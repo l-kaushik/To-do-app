@@ -92,10 +92,13 @@ public class WorkspaceService {
     }
 
     public Boolean taskExistsByName(@NotNull UUID workspaceId, String name) {
+        verifyWorkspaceExists(workspaceId);
         return taskRepository.existsByNameAndWorkspaceUuidAndWorkspaceOwnerUuid(name, workspaceId, getUserId());
     }
 
     public TaskResponseDto getTask(@NotNull UUID workspaceId, @NotNull UUID taskId) {
+        verifyWorkspaceExists(workspaceId);
+
         Task task = taskRepository.findByUuidAndWorkspaceUuidAndWorkspaceOwnerUuid(taskId, workspaceId, getUserId())
                 .orElseThrow(() -> new TaskNotFoundException("Task with UUID " + taskId + " was not found."));
 
@@ -103,11 +106,15 @@ public class WorkspaceService {
     }
 
     public Page<TaskResponseDto> getTasks(@NotNull UUID workspaceId, int page, int size) {
+        verifyWorkspaceExists(workspaceId);
+
         Pageable pageable = PageRequest.of(page, size);
         return taskRepository.findAllWithWorkspaceUuid(pageable, workspaceId, getUserId());
     }
 
     public TaskResponseDto createTask(@NotNull UUID workspaceId, TaskCreateRequestDto taskCreateRequestDto) {
+        verifyWorkspaceExists(workspaceId);
+
         var name = taskCreateRequestDto.name();
         var description = taskCreateRequestDto.description();
         var completed = taskCreateRequestDto.completed();
@@ -128,6 +135,8 @@ public class WorkspaceService {
     }
 
     public TaskResponseDto updateTask(@NotNull UUID workspaceId, @Valid TaskUpdateRequestDto taskUpdateRequestDto) {
+        verifyWorkspaceExists(workspaceId);
+
         var uuid = taskUpdateRequestDto.uuid();
         var name = taskUpdateRequestDto.name();
         var description = taskUpdateRequestDto.description();
@@ -146,6 +155,11 @@ public class WorkspaceService {
 
     private UUID getUserId(){
         return userService.getCurrentAuthenticatedUser().getUuid();
+    }
+
+    private void verifyWorkspaceExists(UUID workspaceId) {
+        if(!workspaceRepository.existsByUuidAndOwnerUuid(workspaceId, getUserId()))
+            throw new WorkspaceNotFoundException("Workspace with UUID " + workspaceId + " was not found.");
     }
 
     private List<TaskResponseDto> fromTaskToTaskResponseDto(List<Task> tasks){
