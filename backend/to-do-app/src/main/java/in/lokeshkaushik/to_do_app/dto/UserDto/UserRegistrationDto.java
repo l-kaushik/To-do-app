@@ -9,9 +9,13 @@ import jakarta.validation.constraints.Size;
 public record UserRegistrationDto(
         @NotBlank(message = "Username cannot be empty")
         @Size(min = 3, max = 13, message = "Username must be between 3 and 13 characters.")
-        @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "Username can only contain letters, numbers, and underscores.")
+        @Pattern(
+                regexp = "^[a-zA-Z][a-zA-Z0-9_]*$",
+                message = "Username must start with a letter and can contain only letters, numbers, and underscores."
+        )
         String username,
 
+        // TODO: validate by sending a code to provided email id
         @NotBlank(message = "Email cannot be empty")
         @Email(message = "Email must be valid")
         String emailId,
