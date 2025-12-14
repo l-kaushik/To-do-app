@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -15,12 +16,8 @@ import java.util.UUID;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
-        boolean existsByNameAndWorkspaceUuid(String name, UUID workspaceUuid);
-    boolean existsByUuid(UUID uuid);
-
-    Optional<Task> findByUuid(UUID uuid);
-    Optional<Task> findByNameAndWorkspaceUuid(String name, UUID workspaceUuid);
-    List<Task> findAllByWorkspaceUuid(UUID workspaceUuid);
+    boolean existsByNameAndWorkspaceUuidAndWorkspaceOwnerUuid(String name, UUID workspaceUuid, UUID ownerUuid);
+    Optional<Task> findByUuidAndWorkspaceUuidAndWorkspaceOwnerUuid(UUID uuid, UUID workspaceUuid, UUID ownerUuid);
 
     @Query("""
             SELECT new in.lokeshkaushik.to_do_app.dto.TaskDto.TaskResponseDto(
@@ -29,6 +26,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             FROM Task t
             JOIN t.workspace w
             WHERE w.uuid = :workspaceUuid
+            AND w.owner.uuid = :ownerUuid
             """)
-    Page<TaskResponseDto> findAllWithWorkspaceUuid(@NotNull UUID workspaceUuid, Pageable pageable);
+    Page<TaskResponseDto> findAllWithWorkspaceUuid(Pageable pageable, @Param("workspaceUuid") UUID workspaceUuid,
+                                                   @Param("ownerUuid") UUID ownerUuid);
 }

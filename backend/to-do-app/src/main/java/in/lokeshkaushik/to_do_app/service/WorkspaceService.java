@@ -92,11 +92,11 @@ public class WorkspaceService {
     }
 
     public Boolean taskExistsByName(@NotNull UUID workspaceId, String name) {
-        return taskRepository.existsByNameAndWorkspaceUuid(name, workspaceId);
+        return taskRepository.existsByNameAndWorkspaceUuidAndWorkspaceOwnerUuid(name, workspaceId, getUserId());
     }
 
     public TaskResponseDto getTask(@NotNull UUID workspaceId, @NotNull UUID taskId) {
-        Task task = taskRepository.findByUuid(taskId)
+        Task task = taskRepository.findByUuidAndWorkspaceUuidAndWorkspaceOwnerUuid(taskId, workspaceId, getUserId())
                 .orElseThrow(() -> new TaskNotFoundException("Task with UUID " + taskId + " was not found."));
 
         return fromTaskToTaskResponseDto(List.of(task)).getFirst();
@@ -104,7 +104,7 @@ public class WorkspaceService {
 
     public Page<TaskResponseDto> getTasks(@NotNull UUID workspaceId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return taskRepository.findAllWithWorkspaceUuid(workspaceId, pageable);
+        return taskRepository.findAllWithWorkspaceUuid(pageable, workspaceId, getUserId());
     }
 
     public TaskResponseDto createTask(@NotNull UUID workspaceId, TaskCreateRequestDto taskCreateRequestDto) {
@@ -112,7 +112,7 @@ public class WorkspaceService {
         var description = taskCreateRequestDto.description();
         var completed = taskCreateRequestDto.completed();
 
-        if(taskRepository.existsByNameAndWorkspaceUuid(name, workspaceId)){
+        if(taskRepository.existsByNameAndWorkspaceUuidAndWorkspaceOwnerUuid(name, workspaceId, getUserId())){
             throw new TaskAlreadyExistsException("Task with name: " + name + " is already exists in workspace with UUID: " + workspaceId);
         }
 
@@ -133,7 +133,7 @@ public class WorkspaceService {
         var description = taskUpdateRequestDto.description();
         var completed = taskUpdateRequestDto.completed();
 
-        Task task = taskRepository.findByUuid(uuid)
+        Task task = taskRepository.findByUuidAndWorkspaceUuidAndWorkspaceOwnerUuid(uuid, workspaceId, getUserId())
                 .orElseThrow(() -> new TaskNotFoundException("Task with UUID " + uuid + " was expected to exist but not found"));
 
         if(!task.getName().equals(name)) task.setName(name);
