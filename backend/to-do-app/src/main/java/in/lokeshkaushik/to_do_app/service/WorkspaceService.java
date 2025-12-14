@@ -72,8 +72,7 @@ public class WorkspaceService {
     }
 
     public Boolean workspaceExistsByName(String name) {
-        if(workspaceRepository.existsByNameAndOwnerUuid(name, getUserId())) return true;
-        throw new WorkspaceNotFoundException("Workspace not found with provided name: " + name);
+        return workspaceRepository.existsByNameAndOwnerUuid(name, getUserId());
     }
 
     public WorkspaceUpdateResponseDto updateWorkspace(@Valid WorkspaceUpdateRequestDto workspaceDto) {
