@@ -18,18 +18,19 @@ public interface WorkspaceRepository extends JpaRepository<Workspace, Long> {
     @Query("SELECT w.uuid FROM Workspace w WHERE w.owner.uuid = :userId")
     List<UUID> findAllIdsByOwnerId(@Param("userId") UUID userId);
 
-    boolean existsByName(String name);
-    boolean existsByUuid(UUID uuid);
+    boolean existsByNameAndOwnerUuid(String name, UUID ownerUuid);
+    boolean existsByUuidAndOwnerUuid(UUID uuid, UUID ownerUuid);
 
-    Optional<Workspace> findByUuid(UUID uuid);
+    Optional<Workspace> findByUuidAndOwnerUuid(UUID uuid, UUID ownerUuid);
 
     @Query("""
             SELECT new in.lokeshkaushik.to_do_app.dto.WorkspaceDtos.WorkspaceMetaDto(
                     w.uuid, w.name, SIZE(w.tasks)
             )
             FROM Workspace w
+            WHERE w.owner.uuid = :userUuid
         """)
-    Page<WorkspaceMetaDto> findAllWithTaskCount(Pageable pageable);
+    Page<WorkspaceMetaDto> findAllWithTaskCount(Pageable pageable, @Param("userUuid") UUID userUuid);
 
     @Query("""
             SELECT new in.lokeshkaushik.to_do_app.dto.WorkspaceDtos.WorkspaceMetaDto(
@@ -37,6 +38,7 @@ public interface WorkspaceRepository extends JpaRepository<Workspace, Long> {
             )
             FROM Workspace w
             WHERE w.uuid = :uuid
+            AND w.owner.uuid = :userUuid
             """)
-    Optional<WorkspaceMetaDto> findWorkspaceMeta(UUID uuid);
+    Optional<WorkspaceMetaDto> findWorkspaceMeta(@Param("uuid") UUID uuid, @Param("userUuid") UUID userUuid);
 }

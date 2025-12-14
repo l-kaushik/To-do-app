@@ -31,7 +31,7 @@ public class WorkspaceService {
     TaskRepository taskRepository;
 
     public WorkspaceMetaDto getWorkspace(UUID workspaceId) {
-        return workspaceRepository.findWorkspaceMeta(workspaceId)
+        return workspaceRepository.findWorkspaceMeta(workspaceId, getUserId())
                 .orElseThrow(() ->
                         new WorkspaceNotFoundException("Workspace is not present or invalid UUID provided."));
     }
@@ -44,11 +44,11 @@ public class WorkspaceService {
 
     public Page<WorkspaceMetaDto> getFullWorkspaces(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return workspaceRepository.findAllWithTaskCount(pageable);
+        return workspaceRepository.findAllWithTaskCount(pageable, getUserId());
     }
 
     public WorkspaceCreateResponseDto createWorkspace(@Valid WorkspaceCreateRequestDto workspaceDto) {
-        if(workspaceRepository.existsByName(workspaceDto.name())){
+        if(workspaceRepository.existsByNameAndOwnerUuid(workspaceDto.name(), getUserId())){
             throw new WorkspaceAlreadyExistsException("Cannot create another workspace with name: " + workspaceDto.name());
         }
 
@@ -72,12 +72,12 @@ public class WorkspaceService {
     }
 
     public Boolean workspaceExistsByName(String name) {
-        if(workspaceRepository.existsByName(name)) return true;
+        if(workspaceRepository.existsByNameAndOwnerUuid(name, getUserId())) return true;
         throw new WorkspaceNotFoundException("Workspace not found with provided name: " + name);
     }
 
     public WorkspaceUpdateResponseDto updateWorkspace(@Valid WorkspaceUpdateRequestDto workspaceDto) {
-        Workspace workspace = workspaceRepository.findByUuid(workspaceDto.uuid())
+        Workspace workspace = workspaceRepository.findByUuidAndOwnerUuid(workspaceDto.uuid(), getUserId())
                 .orElseThrow(() -> new WorkspaceNotFoundException(
                         "Workspace with UUID " + workspaceDto.uuid() + " was expected to exist but not found"
                 ));
@@ -117,7 +117,7 @@ public class WorkspaceService {
             throw new TaskAlreadyExistsException("Task with name: " + name + " is already exists in workspace with UUID: " + workspaceId);
         }
 
-        Workspace workspace = workspaceRepository.findByUuid(workspaceId).orElseThrow(IllegalStateException::new);
+        Workspace workspace = workspaceRepository.findByUuidAndOwnerUuid(workspaceId, getUserId()).orElseThrow(IllegalStateException::new);
 
         Task task = Task.builder().name(name).description(description).completed(completed).workspace(workspace).build();
         Task saved = taskRepository.save(task);
