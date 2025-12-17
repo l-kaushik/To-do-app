@@ -1,53 +1,41 @@
 import { useState, useEffect, useRef } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 
 export default function useInfinitePagination({queryKey, queryFn, size = 10, enabled = true}) {
-    const [allItems, setAllItems] = useState([]);
-    const [page, setPage] = useState(0);
-    const [totalPage, setTotalPage] = useState(0);
-
     const bottomRef = useRef(null);
 
-    const query = useQuery({
-        queryKey: [...queryKey, page],
-        queryFn: () => queryFn(page, size),
-        keepPreviousData: true,
+    const query = useInfiniteQuery({
+        queryKey: [...queryKey],
         enabled: enabled,
+        queryFn: ({pageParam = 0}) => queryFn(pageParam, size),
+        getNextPageParam: (lastPage, allPages) => {
+            const currentPage = lastPage.page.number;
+            const totalPages = lastPage.page.totalPages;
+            return currentPage + 1 < totalPages ? currentPage + 1 : undefined;
+        },
     });
 
     // Fetch data
-    useEffect(() => {
-        if(query.data?.content) {
-            setAllItems(prev => [...prev, ...query.data.content]);
-            setTotalPage(query.data.page.totalPages);
-        }
-    }, [query.data]);
+    const items = query.data?.pages.flatMap(page => page.content) ?? [];
 
     // Intesection Ovserver
     useEffect(() => {
         if(!bottomRef.current) return;
-        if(page > totalPage) return;
+        if(!query.hasNextPage) return;
         const observer = new IntersectionObserver((entries) => {
-            const entry = entries[0];
-            if(entry.isIntersecting && !query.isFetching) {
-                setPage(prev => prev + 1);
+            if(entries[0].isIntersecting && !query.isFetchingNextPage) {
+                query.fetchNextPage();
             }
         });
         observer.observe(bottomRef.current);
 
         return () => observer.disconnect();
-    }, [query.isFetching]);
-
-    // reset on unmount
-    useEffect(() => {
-        setAllItems([])
-        setPage(0)
-    }, [JSON.stringify(queryKey)])
+    }, [query.hasNextPage, query.isFetchingNextPage]);
 
     return {
-        items: allItems,
+        items: items,
         isLoading: query.isLoading,
         isError: query.isError,
         bottomRef,
-    }
+    };
 }

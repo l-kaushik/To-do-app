@@ -1,13 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react'
 import WorkspaceCard from '../Workspace/WorkspaceCard.jsx'
-import { useQuery } from '@tanstack/react-query';
-import { getFullWorkspaces } from '../../api/todoApi.js';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createWorkspace, getFullWorkspaces } from '../../api/todoApi.js';
 import useInfinitePagination from '../../utils/useInfinitePagination.js';
+import CreateWorkspaceModal from '../Workspace/CreateWorkspaceModal.jsx';
 
 function Home() {
+	const [showModal, setShowModal] = useState(false);
+	const queryClient = useQueryClient();
+
 	const handleAddCard = () => {
-		console.log("card added");
-		// TODO: show a pop up to create workspace then send a api call of post create workspace
+		setShowModal(true);
 	}
 
 	const {
@@ -20,6 +23,35 @@ function Home() {
 		queryFn: (page, size) => getFullWorkspaces(page, size),
 		size: 10,
 	});
+
+	const { 
+		mutate, 
+		isLoading: isCreating, 
+		error: createError,
+		isError: isCreateError
+	 } = useMutation({
+		mutationFn: (data) => createWorkspace(data),
+		onSuccess: () => {
+			setShowModal(false);
+			
+			queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+		},
+	});
+
+	const createErrorMessage = () => {
+		if(!isCreateError) return null;
+
+		if(createError.type === "CONFLICT") return createError.message;
+		else if(createError.type === "BAD_REQUEST"){
+			const errors = createError?.message?.errors;
+
+			if(errors && typeof errors === 'object') {
+				return errors ? Object.values(errors)[0] : 'Invalid input';
+			}
+		}
+
+		return "Error creating workspace";
+	}
 
 	return (
 		<main className='min-h-dvh bg-gray-800'>
@@ -42,6 +74,14 @@ function Home() {
 				{/* sentinel element */}
 				<div ref={bottomRef}></div>
 			</div>
+			{showModal && (
+				<CreateWorkspaceModal
+					onClose={() => setShowModal(false)}
+					onSave={(data) => mutate(data)}
+					isLoading={isCreating}
+					error={createErrorMessage()}
+				/>
+			)}
 		</main>
 	)
 }
