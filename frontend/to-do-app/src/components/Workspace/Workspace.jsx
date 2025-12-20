@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import TaskCard from './TaskCard.jsx'
-import { getTasks } from '../../api/todoApi.js';
-import { useQuery } from '@tanstack/react-query';
+import { createTask, getTasks } from '../../api/todoApi.js';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import useInfinitePagination from '../../utils/useInfinitePagination.js';
 
 function Workspace() {
+	const queryClient = useQueryClient();
 	const {uuid} = useParams();   // workspace uuid
 	const [newTask, setNewTask] = useState("");
 
@@ -15,10 +16,22 @@ function Workspace() {
 		isLoading,
 		isError,
 	} = useInfinitePagination({
-		queryKey: ['tasks', uuid],
+		queryKey: ['tasks'],
 		queryFn: (page, size) => getTasks(uuid, page, size),
 		size: 10,
 		enabled: !!uuid,
+	});
+
+	const {
+		mutate, 
+		isLoading: 
+		isCreating, 
+		isCreateError
+	} = useMutation({
+		mutationFn: (data) => createTask(uuid, data),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['tasks']});
+		},
 	});
 
 	function handleInputChange(event) {
@@ -29,9 +42,12 @@ function Workspace() {
 	// TODO: use DECIMAL fraction for position/move operations.
 
 	function addTask(){
-		if(newTask.trim() === "") return;
-		setAllItems(t => [...t, newTask]);
-		setNewTask("")
+		// NOTE: object of task will be changing in future so name and description are same right now
+		mutate({
+			name: newTask.split(' ').join('_'),
+			description: newTask,
+			completed: false
+		});
 	}
 
 	function deleteTask(index){
