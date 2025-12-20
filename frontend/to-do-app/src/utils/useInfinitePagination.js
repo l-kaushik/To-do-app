@@ -33,6 +33,7 @@ export default function useInfinitePagination({queryKey, queryFn, size = 10, ena
     }, [query.hasNextPage, query.isFetchingNextPage]);
 
     return {
+        data: query.data,
         items: items,
         isLoading: query.isLoading,
         isError: query.isError,
