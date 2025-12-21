@@ -2,6 +2,7 @@ package in.lokeshkaushik.to_do_app.repository;
 
 import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskResponseDto;
 import in.lokeshkaushik.to_do_app.model.Task;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -30,4 +31,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     Optional<Task> findTopByWorkspaceUuidAndWorkspaceOwnerUuidOrderByRankDesc(UUID workspaceUuid, UUID ownerUuid);
     boolean existsByRankAndWorkspaceUuidAndWorkspaceOwnerUuid(String rank, UUID workspaceUuid, UUID ownerUuid);
+
+    long deleteByWorkspaceUuidAndUuid(UUID workspaceUuid, UUID uuid);
 }

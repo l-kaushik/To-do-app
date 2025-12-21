@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +49,7 @@ public class WorkspaceService {
         return workspaceRepository.findAllWithTaskCount(pageable, getUserId());
     }
 
+    @Transactional
     public WorkspaceCreateResponseDto createWorkspace(@Valid WorkspaceCreateRequestDto workspaceDto) {
         if(workspaceRepository.existsByNameAndOwnerUuid(workspaceDto.name(), getUserId())){
             throw new WorkspaceAlreadyExistsException("Cannot create another workspace with name: " + workspaceDto.name());
@@ -80,6 +82,7 @@ public class WorkspaceService {
         return workspaceRepository.existsByNameAndOwnerUuid(name, getUserId());
     }
 
+    @Transactional
     public WorkspaceUpdateResponseDto updateWorkspace(@Valid WorkspaceUpdateRequestDto workspaceDto) {
         Workspace workspace = workspaceRepository.findByUuidAndOwnerUuid(workspaceDto.uuid(), getUserId())
                 .orElseThrow(() -> new WorkspaceNotFoundException(
@@ -112,6 +115,7 @@ public class WorkspaceService {
         return taskRepository.findAllWithWorkspaceUuid(pageable, workspaceId, getUserId());
     }
 
+    @Transactional
     public TaskResponseDto createTask(@NotNull UUID workspaceId, TaskCreateRequestDto taskCreateRequestDto) {
         verifyWorkspaceExists(workspaceId);
 
@@ -130,6 +134,7 @@ public class WorkspaceService {
         return fromTaskToTaskResponseDto(List.of(saved)).getFirst();
     }
 
+    @Transactional
     public TaskResponseDto updateTask(@NotNull UUID workspaceId, @Valid TaskUpdateRequestDto taskUpdateRequestDto) {
         verifyWorkspaceExists(workspaceId);
 
@@ -155,6 +160,16 @@ public class WorkspaceService {
         return fromTaskToTaskResponseDto(List.of(saved)).getFirst();
     }
 
+    @Transactional
+    public void removeTask(@NotNull UUID workspaceId, @NotNull UUID taskId) {
+        verifyWorkspaceExists(workspaceId);
+
+        long deleted = taskRepository.deleteByWorkspaceUuidAndUuid(workspaceId, taskId);
+        if(deleted == 0) {
+            throw new TaskNotFoundException("Task with UUID " + taskId + " was expected to exist but not found");
+        }
+    }
+
     private UUID getUserId(){
         return userService.getCurrentAuthenticatedUser().getUuid();
     }
@@ -165,6 +180,7 @@ public class WorkspaceService {
     }
 
     private void verifyTaskExistsByRank(String rank, UUID workspaceUuid){
+        if(rank.equals(LexRankService.MIN_RANK) || rank.equals(LexRankService.MAX_RANK)) return;
         if(!taskRepository.existsByRankAndWorkspaceUuidAndWorkspaceOwnerUuid(rank, workspaceUuid, getUserId()))
             throw new TaskNotFoundException("Task with rank " + rank + " was not found");
     }
