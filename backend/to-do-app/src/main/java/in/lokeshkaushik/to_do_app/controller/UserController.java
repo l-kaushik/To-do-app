@@ -78,4 +78,19 @@ public class UserController {
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
                 .body(userLoginServiceResponseDto.loginResponseDto());
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> loginUser(){
+        ResponseCookie cookie = ResponseCookie.from("jwt", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
+
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .build();
+    }
 }
