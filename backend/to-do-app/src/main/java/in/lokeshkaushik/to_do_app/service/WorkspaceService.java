@@ -99,6 +99,14 @@ public class WorkspaceService {
         return new WorkspaceUpdateResponseDto(saved.getUuid(), saved.getName());
     }
 
+    @Transactional
+    public void removeWorkspace(@NotNull UUID workspaceId) {
+        long deleted = workspaceRepository.deleteByUuidAndOwnerUuid(workspaceId, getUserId());
+        if(deleted == 0){
+            throw new WorkspaceNotFoundException("Workspace with UUID " + workspaceId + " was not found.");
+        }
+    }
+
     public TaskResponseDto getTask(@NotNull UUID workspaceId, @NotNull UUID taskId) {
         verifyWorkspaceExists(workspaceId);
 
@@ -164,7 +172,7 @@ public class WorkspaceService {
     public void removeTask(@NotNull UUID workspaceId, @NotNull UUID taskId) {
         verifyWorkspaceExists(workspaceId);
 
-        long deleted = taskRepository.deleteByWorkspaceUuidAndUuid(workspaceId, taskId);
+        long deleted = taskRepository.deleteByUuidAndWorkspaceUuidAndWorkspaceOwnerUuid(taskId, workspaceId, getUserId());
         if(deleted == 0) {
             throw new TaskNotFoundException("Task with UUID " + taskId + " was expected to exist but not found");
         }

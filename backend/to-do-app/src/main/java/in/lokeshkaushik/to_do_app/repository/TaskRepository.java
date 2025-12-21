@@ -31,6 +31,5 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     Optional<Task> findTopByWorkspaceUuidAndWorkspaceOwnerUuidOrderByRankDesc(UUID workspaceUuid, UUID ownerUuid);
     boolean existsByRankAndWorkspaceUuidAndWorkspaceOwnerUuid(String rank, UUID workspaceUuid, UUID ownerUuid);
-
-    long deleteByWorkspaceUuidAndUuid(UUID workspaceUuid, UUID uuid);
+    long deleteByUuidAndWorkspaceUuidAndWorkspaceOwnerUuid(@NotNull UUID uuid, @NotNull UUID workspaceUuid, UUID ownerUuid);
 }

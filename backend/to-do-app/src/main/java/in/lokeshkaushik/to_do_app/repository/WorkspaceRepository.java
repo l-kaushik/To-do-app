@@ -41,4 +41,5 @@ public interface WorkspaceRepository extends JpaRepository<Workspace, Long> {
             AND w.owner.uuid = :userUuid
             """)
     Optional<WorkspaceMetaDto> findWorkspaceMeta(@Param("uuid") UUID uuid, @Param("userUuid") UUID userUuid);
+    long deleteByUuidAndOwnerUuid(UUID uuid, UUID ownerUuid);
 }
