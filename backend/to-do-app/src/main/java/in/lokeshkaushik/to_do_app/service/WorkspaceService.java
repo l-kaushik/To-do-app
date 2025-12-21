@@ -116,7 +116,6 @@ public class WorkspaceService {
         verifyWorkspaceExists(workspaceId);
 
         var rank = generateNextRank(workspaceId);
-        verifyGeneratedRank(rank, workspaceId);
         var description = taskCreateRequestDto.description();
         var completed = taskCreateRequestDto.completed();
 
@@ -142,7 +141,6 @@ public class WorkspaceService {
 
         var uuid = taskUpdateRequestDto.uuid();
         var rank = generateNextRank(beforeRank, afterRank);
-        verifyGeneratedRank(rank, workspaceId);
         var description = taskUpdateRequestDto.description();
         var completed = taskUpdateRequestDto.completed();
 
@@ -171,54 +169,18 @@ public class WorkspaceService {
             throw new TaskNotFoundException("Task with rank " + rank + " was not found");
     }
 
-    private void verifyGeneratedRank( String rank, UUID workspaceId){
-        if(taskRepository.existsByRankAndWorkspaceUuidAndWorkspaceOwnerUuid(rank, workspaceId, getUserId()))
-            throw new BadRequestException("Invalid ranks provided!");
-    }
-
     private String generateNextRank(String left, String right){
-        return calculateLexRankMidPoint(left, right);
+        return LexRankService.calculateLexMIdPoint(left, right);
     }
 
     private String generateNextRank(UUID workspaceId) {
         Optional<Task> lastTask = taskRepository.findTopByWorkspaceUuidAndWorkspaceOwnerUuidOrderByRankDesc(workspaceId, getUserId());
 
         if(lastTask.isPresent()){
-             return calculateLexRankMidPoint(lastTask.get().getRank(), "z".repeat(lastTask.get().getRank().length()));
+            return LexRankService.calculateLexMIdPoint(lastTask.get().getRank(), "");
         }
-        return "1000";
+        return LexRankService.INITIAL_RANK;
     }
-
-    private static String calculateLexRankMidPoint(String left, String right) {
-        if (left.compareTo(right) >= 0) throw new IllegalArgumentException("Invalid ranks provided!");
-        String alphanumeric = "0123456789abcdefghijklmnopqrstuvwxyz";
-        StringBuilder st = new StringBuilder();
-        int i = 0;
-        boolean foundMidPoint = false;
-        while(i < left.length() || i < right.length()){
-            char leftChar = (i < left.length()) ? left.charAt(i) : '0';
-            char rightChar = (i < right.length()) ? right.charAt(i) : 'z';
-            int L = alphanumeric.indexOf(leftChar);
-            int R = alphanumeric.indexOf(rightChar);
-
-            if((R - L) == 1 || (R - L) == 0){
-                i++;
-                st.append(leftChar);
-                continue;
-            }
-            else if((R - L) > 1){
-                int midDigit = ((L + R)/2);
-                st.append(alphanumeric.charAt(midDigit));
-                foundMidPoint = true;
-                break;
-            }
-            i++;
-        }
-        if(!foundMidPoint) st.append(alphanumeric.charAt(alphanumeric.length()/2));
-        return st.toString();
-    }
-
-
 
     private List<TaskResponseDto> fromTaskToTaskResponseDto(List<Task> tasks){
         return tasks.stream().map(task -> new TaskResponseDto(
