@@ -83,6 +83,24 @@ function Workspace() {
 		});
 	}
 
+	const handleUpdateTask = (taskList, activeTaskUuid, isCompleted = null) => {
+		const index = taskList.findIndex(t => t.uuid === activeTaskUuid);
+
+		update({
+			uuid: activeTaskUuid,
+			beforeRank: index === 0 ? MIN_RANK : taskList[index - 1].rank,
+			afterRank:
+			index === taskList.length - 1
+				? MAX_RANK : taskList[index + 1].rank,
+			description: taskList[index].description,
+			completed: isCompleted ?? taskList[index].completed
+		});
+	}
+
+	const handleOnCheckboxClicked = (taskUuid, newValue) => {
+		handleUpdateTask(tasks, taskUuid, newValue);
+	}
+
 	const handleDragEnd = (event) => {
 		const { active, over } = event;
 		if (!over || active.id === over.id) return;
@@ -92,17 +110,9 @@ function Workspace() {
 		if (from === -1 || to === -1) return;
 
 		const reordered = arrayMove(tasks, from, to);
-		const index = reordered.findIndex(t => t.uuid === active.id);
 
-		update({
-			uuid: active.id,
-			beforeRank: index === 0 ? MIN_RANK : reordered[index - 1].rank,
-			afterRank:
-			index === reordered.length - 1
-				? MAX_RANK : reordered[index + 1].rank,
-			description: reordered[index].description,
-			completed: reordered[index].completed
-		});
+		// update api call
+		handleUpdateTask(reordered, active.id);
 
 		// update local state
 		setTasks(reordered);
@@ -150,6 +160,8 @@ function Workspace() {
 										id={task.uuid}
 										text={task.description} 
 										index={index}
+										isCompleted={task.completed}
+										onChange={handleOnCheckboxClicked}
 										onDelete={deleteTask} 
 									/>
 								)
