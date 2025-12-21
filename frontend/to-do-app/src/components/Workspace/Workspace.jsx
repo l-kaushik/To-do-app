@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import TaskCard from './TaskCard.jsx'
-import { createTask, getTasks } from '../../api/todoApi.js';
+import { createTask, updateTask, getTasks } from '../../api/todoApi.js';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import useInfinitePagination from '../../utils/useInfinitePagination.js';
 import { closestCorners, DndContext, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -13,6 +13,8 @@ function Workspace() {
 	const {uuid} = useParams();   // workspace uuid
 	const [tasks, setTasks] = useState([]);
 	const [newTask, setNewTask] = useState("");
+	const MIN_RANK = "000000";
+	const MAX_RANK = "zzzzzz";
 
 	const {
 		data,
@@ -41,7 +43,18 @@ function Workspace() {
 		mutationFn: (data) => createTask(uuid, data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['tasks']});
+			setNewTask('');
 		},
+	});
+
+	const {
+		mutate: update,
+		isUpdateError
+	} = useMutation({
+		mutationFn: (data) => updateTask(uuid, data),
+		onSuccess: () => {
+			queryClient.invalidateQueries({queryKey: ['tasks']});
+		}
 	});
 
 	function handleInputChange(event) {
@@ -54,7 +67,6 @@ function Workspace() {
 	function addTask(){
 		// NOTE: object of task will be changing in future so name and description are same right now
 		mutate({
-			name: newTask.split(' ').join('_'),
 			description: newTask,
 			completed: false
 		});
@@ -68,27 +80,38 @@ function Workspace() {
 		const { active, over } = event;
 		if (!over || active.id === over.id) return;
 
-		setTasks(prev => {
-			const from = prev.findIndex(t => t.uuid === active.id);
-			const to   = prev.findIndex(t => t.uuid === over.id);
-			if (from === -1 || to === -1) return prev;
+		const from = tasks.findIndex(t => t.uuid === active.id);
+		const to   = tasks.findIndex(t => t.uuid === over.id);
+		if (from === -1 || to === -1) return;
 
-			const reordered = arrayMove(prev, from, to);
+		const reordered = arrayMove(tasks, from, to);
+		const index = reordered.findIndex(t => t.uuid === active.id);
 
-			queryClient.setQueryData(['tasks'], old => {
+		update({
+			uuid: active.id,
+			beforeRank: index === 0 ? MIN_RANK : reordered[index - 1].rank,
+			afterRank:
+			index === reordered.length - 1
+				? MAX_RANK : reordered[index + 1].rank,
+			description: reordered[index].description,
+			completed: reordered[index].completed
+		});
+
+		// update local state
+		setTasks(reordered);
+
+		// update infinite query cache
+		queryClient.setQueryData(['tasks'], old => {
 			if (!old) return old;
 
 			let cursor = 0;
 			const newPages = old.pages.map(page => {
-				const slice = reordered.slice(cursor, cursor + page.content.length);
-				cursor += page.content.length;
-				return { ...page, content: slice };
+			const slice = reordered.slice(cursor, cursor + page.content.length);
+			cursor += page.content.length;
+			return { ...page, content: slice };
 			});
 
 			return { ...old, pages: newPages };
-			});
-
-			return reordered;
 		});
 	};
 

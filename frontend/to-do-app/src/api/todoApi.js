@@ -82,6 +82,11 @@ export const createTask = async(uuid, payload) => {
     return response.data;
 }
 
+export const updateTask = async(uuid, payload) => {
+    const response = await axiosInstance.put(`/api/workspaces/${uuid}/tasks`, payload);
+    return response.data
+}
+
 export const getFullWorkspaces = async(page = 0, size = 10) => {
     const response = await axiosInstance.get(`/api/workspaces?full=true&page=${page}&size=${size}`);
     return response.data;
