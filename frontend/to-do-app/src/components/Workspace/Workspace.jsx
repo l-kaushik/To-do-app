@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import TaskCard from './TaskCard.jsx'
-import { createTask, updateTask, getTasks } from '../../api/todoApi.js';
+import { createTask, updateTask, removeTask, getTasks } from '../../api/todoApi.js';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import useInfinitePagination from '../../utils/useInfinitePagination.js';
 import { closestCorners, DndContext, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -57,6 +57,15 @@ function Workspace() {
 		}
 	});
 
+	const {
+		mutate: deleteTask,
+	} = useMutation({
+		mutationFn: (taskUuid) => removeTask(uuid, taskUuid),
+		onSuccess: () => {
+			queryClient.invalidateQueries({queryKey: ['tasks']});
+		} 
+	})
+
 	function handleInputChange(event) {
 		setNewTask(event.target.value);
 	}
@@ -64,16 +73,14 @@ function Workspace() {
 	// TODO: instead of modifying the actual state from useInfinitePagination hook, perform delete and move api calls.
 	// TODO: use DECIMAL fraction for position/move operations.
 
-	function addTask(){
-		// NOTE: object of task will be changing in future so name and description are same right now
+	function addTask() {
+		const trimmed = newTask.trim();
+		if (trimmed === "") return;
+
 		mutate({
-			description: newTask,
+			description: trimmed,
 			completed: false
 		});
-	}
-
-	function deleteTask(index){
-
 	}
 
 	const handleDragEnd = (event) => {

@@ -96,3 +96,8 @@ export const getTasks = async(uuid, page = 0, size = 10) => {
     const response = await axiosInstance.get(`/api/workspaces/${uuid}/tasks?page=${page}&size=${size}`);
     return response.data;
 }
+
+export const removeTask = async(workspaceUuid, taskUuid) => {
+    const response = await axiosInstance.delete(`/api/workspaces/${workspaceUuid}/tasks/${taskUuid}`);
+    return response.data;
+}
