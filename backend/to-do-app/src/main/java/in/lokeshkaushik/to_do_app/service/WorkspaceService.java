@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -59,7 +60,11 @@ public class WorkspaceService {
 
         // make sure each task has reference to workspace
         List<Task> tasks = fromAnyTaskDtoToTask(workspaceDto.tasks());
-        tasks.forEach(task -> task.setWorkspace(workspace));
+        tasks.forEach(task -> {
+            var lastRank = generateNextRank(workspace.getUuid());
+            task.setRank(lastRank);
+            task.setWorkspace(workspace);
+        });
         workspace.setTasks(tasks);
 
         Workspace saved = workspaceRepository.save(workspace);
@@ -91,11 +96,6 @@ public class WorkspaceService {
         return new WorkspaceUpdateResponseDto(saved.getUuid(), saved.getName());
     }
 
-    public Boolean taskExistsByName(@NotNull UUID workspaceId, String name) {
-        verifyWorkspaceExists(workspaceId);
-        return taskRepository.existsByNameAndWorkspaceUuidAndWorkspaceOwnerUuid(name, workspaceId, getUserId());
-    }
-
     public TaskResponseDto getTask(@NotNull UUID workspaceId, @NotNull UUID taskId) {
         verifyWorkspaceExists(workspaceId);
 
@@ -115,17 +115,14 @@ public class WorkspaceService {
     public TaskResponseDto createTask(@NotNull UUID workspaceId, TaskCreateRequestDto taskCreateRequestDto) {
         verifyWorkspaceExists(workspaceId);
 
-        var name = taskCreateRequestDto.name();
+        var rank = generateNextRank(workspaceId);
+        verifyGeneratedRank(rank, workspaceId);
         var description = taskCreateRequestDto.description();
         var completed = taskCreateRequestDto.completed();
 
-        if(taskRepository.existsByNameAndWorkspaceUuidAndWorkspaceOwnerUuid(name, workspaceId, getUserId())){
-            throw new TaskAlreadyExistsException("Task with name: " + name + " is already exists in workspace with UUID: " + workspaceId);
-        }
-
         Workspace workspace = workspaceRepository.findByUuidAndOwnerUuid(workspaceId, getUserId()).orElseThrow(IllegalStateException::new);
 
-        Task task = Task.builder().name(name).description(description).completed(completed).workspace(workspace).build();
+        Task task = Task.builder().rank(rank).description(description).completed(completed).workspace(workspace).build();
         Task saved = taskRepository.save(task);
         if(saved.getId() == null){
             throw new SaveFailedException("Failed to save task");
@@ -137,15 +134,22 @@ public class WorkspaceService {
     public TaskResponseDto updateTask(@NotNull UUID workspaceId, @Valid TaskUpdateRequestDto taskUpdateRequestDto) {
         verifyWorkspaceExists(workspaceId);
 
+        var beforeRank = taskUpdateRequestDto.beforeRank();
+        var afterRank = taskUpdateRequestDto.afterRank();
+
+        verifyTaskExistsByRank(beforeRank, workspaceId);
+        verifyTaskExistsByRank(afterRank, workspaceId);
+
         var uuid = taskUpdateRequestDto.uuid();
-        var name = taskUpdateRequestDto.name();
+        var rank = generateNextRank(beforeRank, afterRank);
+        verifyGeneratedRank(rank, workspaceId);
         var description = taskUpdateRequestDto.description();
         var completed = taskUpdateRequestDto.completed();
 
         Task task = taskRepository.findByUuidAndWorkspaceUuidAndWorkspaceOwnerUuid(uuid, workspaceId, getUserId())
                 .orElseThrow(() -> new TaskNotFoundException("Task with UUID " + uuid + " was expected to exist but not found"));
 
-        if(!task.getName().equals(name)) task.setName(name);
+        if(!task.getRank().equals(rank)) task.setRank(rank);
         if(!task.getDescription().equals(description)) task.setDescription(description);
         if(task.isCompleted() != completed) task.setCompleted(completed);
 
@@ -162,10 +166,64 @@ public class WorkspaceService {
             throw new WorkspaceNotFoundException("Workspace with UUID " + workspaceId + " was not found.");
     }
 
+    private void verifyTaskExistsByRank(String rank, UUID workspaceUuid){
+        if(!taskRepository.existsByRankAndWorkspaceUuidAndWorkspaceOwnerUuid(rank, workspaceUuid, getUserId()))
+            throw new TaskNotFoundException("Task with rank " + rank + " was not found");
+    }
+
+    private void verifyGeneratedRank( String rank, UUID workspaceId){
+        if(taskRepository.existsByRankAndWorkspaceUuidAndWorkspaceOwnerUuid(rank, workspaceId, getUserId()))
+            throw new BadRequestException("Invalid ranks provided!");
+    }
+
+    private String generateNextRank(String left, String right){
+        return calculateLexRankMidPoint(left, right);
+    }
+
+    private String generateNextRank(UUID workspaceId) {
+        Optional<Task> lastTask = taskRepository.findTopByWorkspaceUuidAndWorkspaceOwnerUuidOrderByRankDesc(workspaceId, getUserId());
+
+        if(lastTask.isPresent()){
+             return calculateLexRankMidPoint(lastTask.get().getRank(), "z".repeat(lastTask.get().getRank().length()));
+        }
+        return "1000";
+    }
+
+    private static String calculateLexRankMidPoint(String left, String right) {
+        if (left.compareTo(right) >= 0) throw new IllegalArgumentException("Invalid ranks provided!");
+        String alphanumeric = "0123456789abcdefghijklmnopqrstuvwxyz";
+        StringBuilder st = new StringBuilder();
+        int i = 0;
+        boolean foundMidPoint = false;
+        while(i < left.length() || i < right.length()){
+            char leftChar = (i < left.length()) ? left.charAt(i) : '0';
+            char rightChar = (i < right.length()) ? right.charAt(i) : 'z';
+            int L = alphanumeric.indexOf(leftChar);
+            int R = alphanumeric.indexOf(rightChar);
+
+            if((R - L) == 1 || (R - L) == 0){
+                i++;
+                st.append(leftChar);
+                continue;
+            }
+            else if((R - L) > 1){
+                int midDigit = ((L + R)/2);
+                st.append(alphanumeric.charAt(midDigit));
+                foundMidPoint = true;
+                break;
+            }
+            i++;
+        }
+        if(!foundMidPoint) st.append(alphanumeric.charAt(alphanumeric.length()/2));
+        return st.toString();
+    }
+
+
+
     private List<TaskResponseDto> fromTaskToTaskResponseDto(List<Task> tasks){
         return tasks.stream().map(task -> new TaskResponseDto(
                         task.getUuid(),
-                        task.getName(),
+                        task.getRank(),
                         task.getDescription(),
                         task.isCompleted()
                 )).toList();
@@ -173,7 +231,6 @@ public class WorkspaceService {
 
     private List<Task> fromAnyTaskDtoToTask(List<? extends TaskDto> tasks){
         return tasks.stream().map(task -> Task.builder()
-                        .name(task.name())
                         .description(task.description())
                         .completed(task.completed())
                         .build()

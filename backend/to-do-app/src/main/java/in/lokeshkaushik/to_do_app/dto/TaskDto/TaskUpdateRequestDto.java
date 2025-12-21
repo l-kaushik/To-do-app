@@ -11,13 +11,21 @@ public record TaskUpdateRequestDto(
         @NotNull(message = "Task UUID cannot be null")
         UUID uuid,
 
-        @NotBlank(message = "Task name cannot be empty")
-        @Size(max = 100, message = "Task name must not exceed 100 characters")
+        @NotBlank(message = "Task rank cannot be empty")
+        @Size(max = 100, message = "Task rank must not exceed 100 characters")
         @Pattern(
-                regexp = "^[a-zA-Z][a-zA-Z0-9_]*$",
-                message = "Task name must start with a letter and can only contain letters, numbers, and underscores."
+                regexp = "^[0-9a-z]+$",
+                message = "Task rank can only contains lowercase letters and numbers"
         )
-        String name,
+        String beforeRank,
+
+        @NotBlank(message = "Task rank cannot be empty")
+        @Size(max = 100, message = "Task rank must not exceed 100 characters")
+        @Pattern(
+                regexp = "^[0-9a-z]+$",
+                message = "Task rank can only contains lowercase letters and numbers"
+        )
+        String afterRank,
 
         @Size(max = 500, message = "Description must not exceed max characters limit")
         String description,
