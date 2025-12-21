@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import WorkspaceCard from '../Workspace/WorkspaceCard.jsx'
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createWorkspace, getFullWorkspaces } from '../../api/todoApi.js';
+import { createWorkspace, getFullWorkspaces, removeWorkspace } from '../../api/todoApi.js';
 import useInfinitePagination from '../../utils/useInfinitePagination.js';
 import CreateWorkspaceModal from '../Workspace/CreateWorkspaceModal.jsx';
 
@@ -12,6 +12,15 @@ function Home() {
 	const handleAddCard = () => {
 		setShowModal(true);
 	}
+
+	const {
+		mutate: deleteWorkspace,
+	} = useMutation({
+		mutationFn: (uuid) => removeWorkspace(uuid),
+		onSuccess: () => {
+			queryClient.invalidateQueries({queryKey: ['workspaces']});
+		} 
+	})
 
 	const {
 		items: workspaces,
@@ -68,6 +77,7 @@ function Home() {
 						key={workspace.uuid}
 						uuid={workspace.uuid}
 						name={workspace.name}
+						onDelete={deleteWorkspace}
 						taskCount={workspace.tasksCount}
 					 />
 				))}

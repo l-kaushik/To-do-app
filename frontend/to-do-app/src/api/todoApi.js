@@ -101,3 +101,8 @@ export const removeTask = async(workspaceUuid, taskUuid) => {
     const response = await axiosInstance.delete(`/api/workspaces/${workspaceUuid}/tasks/${taskUuid}`);
     return response.data;
 }
+
+export const removeWorkspace = async(workspaceUuid) => {
+    const response = await axiosInstance.delete(`/api/workspaces/${workspaceUuid}`);
+    return response.data;
+}

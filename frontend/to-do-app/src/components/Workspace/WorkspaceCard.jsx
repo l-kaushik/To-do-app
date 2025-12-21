@@ -1,7 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
-function WorkspaceCard({uuid, name, taskCount}) {
+function WorkspaceCard({uuid, name, taskCount, onDelete}) {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -14,9 +14,14 @@ function WorkspaceCard({uuid, name, taskCount}) {
         <hr />
         <ul className="list-disc px-6">
             <li className='text-xl text-gray-400'>UUID: <p className='inline text-white'>{uuid}</p></li>
-            <li className='text-xl text-gray-400'>No. Of Tasks: <p className='inline text-white'>{taskCount}</p></li>
-            <li className='text-xl text-gray-400'>Date Created: <p className='inline text-white'>{}</p></li>
+            <li className='text-xl text-gray-400'>No. Of Tasks: <p className='inline text-white'>{taskCount}</p></li> 
         </ul>
+        <button className={`text-xs p-2 rounded-sm bg-red-500 hover:bg-red-700`} 
+        onClick={(e) =>{
+          e.stopPropagation();
+          onDelete(uuid)}
+        }
+        >Delete</button>
     </div>
   )
 }
