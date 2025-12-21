@@ -63,6 +63,11 @@ export const loginUser = async (credentials) => {
     return response.data;
 }
 
+export const logoutUser = async () => {
+    const response = await axiosInstance.post("/api/users/logout");
+    return response.data;
+}
+
 // user endpoints
 
 export const getUser = async () => {
