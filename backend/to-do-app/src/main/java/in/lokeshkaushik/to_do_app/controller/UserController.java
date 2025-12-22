@@ -71,7 +71,7 @@ public class UserController {
                 .secure(true)
                 .path("/")
                 .maxAge(7 * 24 * 60 * 60) // cookie last for 7 days
-                .sameSite("Strict")
+                .sameSite("None")
                 .build();
 
         return ResponseEntity.ok()
