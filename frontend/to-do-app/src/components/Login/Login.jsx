@@ -1,7 +1,154 @@
 import React, { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { isEmptyString } from '../../utils/dataValidation';
+import { loginUser, registerUser } from '../../api/todoApi';
+import { useNavigate } from 'react-router-dom';
 
-function Login() {
+export default function Login() {
 	const [isSignUp, setIsSignUp] = useState(false);
+	const [username, setUsername] = useState('');
+	const [email, setEmail] = useState('');
+	const [password, setPassword] = useState('');
+	const [responseBox, setResponseBox] = useState('');
+	const [responseBoxError, setResponseBoxError] = useState(true);
+	const [errors, setErrors] = useState({
+		username: false,
+		email: false,
+		identifier: false,
+		password: false
+	});
+	const navigate = useNavigate();
+
+	function handleNetworkError(){
+		setResponseBoxError(true);
+		setResponseBox("Can't connect to the server. Please check your internet connection.");
+	}
+
+	function resetStates() {
+		setUsername("");
+		setEmail("");
+		setPassword("");
+		setResponseBox("");
+		setResponseBoxError(true);
+		setErrors({
+			username: false,
+			email: false,
+			identifier: false,
+			password: false
+		});
+	}
+
+	const registerMutation = useMutation({
+		mutationFn: (body) => registerUser(body),
+		onSuccess: (data) => {
+			setResponseBoxError(false);
+			setResponseBox("Account created successfully! Please go to Sign In section.");
+			setUsername("");
+			setEmail("");
+			setPassword("");
+		},
+		onError: (error) => {
+			if(error.type === "NETWORK_ERROR") {
+				handleNetworkError();
+			}
+			else if(error.type === "CONFLICT") {
+				setResponseBoxError(true);
+				setResponseBox(error?.message);
+
+				if(error.message.includes("password")) {
+					setErrors(prev => ({ ...prev, password: true }));
+				}
+				else if(error.message.includes("email")) {
+					setErrors(prev => ({ ...prev, email: true }));
+				}
+				else if(error.message.includes("username")){
+					setErrors(prev => ({...prev, username: true}));
+				}
+			}
+			else if(error.type === "BAD_REQUEST"){
+				const errors = error?.message?.errors;
+
+				if (!errors) return;
+				if (errors.password) {
+					setErrors(prev => ({ ...prev, password: true }));
+					setResponseBox(errors.password);
+				}
+
+				if (errors.email) {
+					setErrors(prev => ({ ...prev, email: true }));
+					setResponseBox(errors.email);
+				}
+
+				if (errors.username) {
+					setErrors(prev => ({ ...prev, username: true }));
+					setResponseBox("Invalid username, must start with a letter and can contain only alphanumeric characters");
+				}
+
+			}
+		}
+	});
+
+	const loginMutation = useMutation({
+		mutationFn: (body) => loginUser(body),
+		onSuccess: (data) => {
+			navigate("/");
+		},
+		onError: (error) => {
+			if(error.type === "NETWORK_ERROR") {
+				handleNetworkError();
+				return;
+			}
+
+			if(error.type === "UNAUTHORIZED") {
+				setResponseBox(error.message);
+
+				if(error.message.includes("password")) {
+					setErrors(prev => ({ ...prev, password: true }));
+				}
+				else if(error.message.includes("email") || error.message.includes("username")) {
+					setErrors(prev => ({ ...prev, identifier: true }));
+				}
+			}
+		},
+	});
+
+	async function handleAuth(e){
+		e.preventDefault();		// prevent react refresh on form submit
+		setResponseBox("");
+		setErrors({
+			username: false,
+			email: false,
+			identifier: false,
+			password: false
+		});
+
+		const validationErrors = validateAuthData({isSignUp, username, email, password});
+		if(Object.keys(validationErrors).length > 0) {
+			setErrors(prev => ({...prev, ...validationErrors}));
+			return;
+		}
+
+		// register
+		if(isSignUp) {
+			const requestBody = {
+				username: username,
+				emailId: email,
+				password: password
+			}
+			registerMutation.mutate(requestBody);
+			return;
+		}
+		else{
+			// login
+			const requestBody = {
+				identifier: username,
+				password: password
+			}
+				
+			loginMutation.mutate(requestBody);
+		}
+	}
+
     return (
 		 <div className="min-h-screen flex items-center justify-center bg-black text-white">
 			<div className="bg-gray-900 p-8 rounded-xl shadow-lg w-80">
@@ -9,13 +156,19 @@ function Login() {
 				<div className="flex mb-6">
 					<button
 						className={`flex-1 py-2 ${!isSignUp ? "bg-gray-700" : "bg-gray-800"} rounded-l hover:bg-gray-600 transition`}
-						onClick={() => setIsSignUp(false)}
+						onClick={() => { 
+							resetStates(); 
+							setIsSignUp(false)
+						}}
 					>
 						Sign In
 					</button>
 					<button
 						className={`flex-1 py-2 ${isSignUp ? "bg-gray-700" : "bg-gray-800"} rounded-r hover:bg-gray-600 transition`}
-						onClick={() => setIsSignUp(true)}
+						onClick={() => {
+							resetStates();
+							setIsSignUp(true)
+						}}
 					>
 						Sign Up
 					</button>
@@ -29,12 +182,18 @@ function Login() {
 					<input
 						type="text"
 						placeholder="Username"
-						className="p-2 rounded bg-gray-800 border border-gray-700"
+						className={`p-2 rounded bg-gray-800 border ${errors.username ? "border-red-500" : "border-gray-700"}`}
+						id="username"
+						value={username}
+						onChange={(event) => setUsername(event.target.value)}
 					/>
 					<input
 						type="email"
 						placeholder="Email"
-						className="p-2 rounded bg-gray-800 border border-gray-700"
+						className={`p-2 rounded bg-gray-800 border ${errors.email ? "border-red-500" : "border-gray-700"}`}
+						id="email"
+						value={email}
+						onChange={(event) => setEmail(event.target.value)}
 					/>
 					</>
 				)}
@@ -44,7 +203,10 @@ function Login() {
 					<input
 						type="text"
 						placeholder="Username or Email"
-						className="p-2 rounded bg-gray-800 border border-gray-700"
+						className={`p-2 rounded bg-gray-800 border ${errors.identifier ? "border-red-500" : "border-gray-700"}`}
+						id="identifier"
+						value={username}
+						onChange={(event) => setUsername(event.target.value)}
 					/>
 				)}
 
@@ -52,17 +214,35 @@ function Login() {
 				<input
 					type="password"
 					placeholder="Password"
-					className="p-2 rounded bg-gray-800 border border-gray-700"
+					className={`p-2 rounded bg-gray-800 border ${errors.password ? "border-red-500" : "border-gray-700"}`}
+					id="password"
+					value={password}
+					onChange={(event) => setPassword(event.target.value)}
 				/>
 
-				<button className="mt-3 py-2 bg-blue-600 rounded hover:bg-blue-700 transition">
+				<button className="mt-3 py-2 bg-blue-600 rounded hover:bg-blue-700 transition
+				active:bg-blue-600
+				disabled:bg-blue-400 disabled:cursor-not-allowed"
+				disabled={isSignUp ? registerMutation.isPending : loginMutation.isPending}
+				onClick={handleAuth}>
 					{isSignUp ? "Create Account" : "Sign In"}
 				</button>
 
 				</form>
+
+				<div className={`pt-4 ${responseBoxError ? "text-red-600" : "text-green-600"}`} id='responseBox'>{responseBox}</div>
 			</div>
 		 </div>
     )
 }
 
-export default Login
+function validateAuthData({ isSignUp, username, email, password }) {
+	const errors = {};
+
+	if (!isSignUp && isEmptyString(username)) errors.identifier = true;
+	if (isSignUp && isEmptyString(username)) errors.username = true;
+	if (isSignUp && isEmptyString(email)) errors.email = true;
+	if (isEmptyString(password)) errors.password = true;
+
+	return errors;
+}
