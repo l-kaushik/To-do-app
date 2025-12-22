@@ -5,6 +5,7 @@ import in.lokeshkaushik.to_do_app.service.JwtService;
 import in.lokeshkaushik.to_do_app.service.CustomUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,20 +30,30 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
+        String cookieToken = getTokenFromCookies(request);
         String bearer = "Bearer ";
         String token = null;
         String uuid = null;
 
-        if(authHeader == null){
-            writeErrorResponse(response, "Missing JWT token after 'Bearer'", HttpServletResponse.SC_UNAUTHORIZED);
+//        if(authHeader == null){
+//            writeErrorResponse(response, "Missing JWT token after 'Bearer'", HttpServletResponse.SC_UNAUTHORIZED);
+//            return;
+//        }
+
+        if(cookieToken == null){
+            writeErrorResponse(response, "Missing JWT token in request cookies", HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
-
-        if(authHeader.startsWith(bearer)){
-            token = authHeader.substring(bearer.length()).trim();
+        else{
+            token = cookieToken;
             uuid = getUuidSafely(token, response);
-            if(uuid == null) return;
         }
+
+//        if(authHeader.startsWith(bearer)){
+//            token = authHeader.substring(bearer.length()).trim();
+//            uuid = getUuidSafely(token, response);
+//            if(uuid == null) return;
+//        }
 
         if(uuid != null && SecurityContextHolder.getContext().getAuthentication() == null){
             UuidUserDetails userDetails = context.getBean(CustomUserDetailsService.class).loadUserByIdentifier(uuid);
@@ -55,6 +66,18 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private String getTokenFromCookies(HttpServletRequest request) {
+        if(request.getCookies() == null) return null;
+
+        for(Cookie cookie : request.getCookies()){
+            if("jwt".equals(cookie.getName())){
+                return cookie.getValue();
+            }
+        }
+
+        return null;
     }
 
     @Override

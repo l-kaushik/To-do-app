@@ -10,7 +10,10 @@ import java.util.List;
 public record WorkspaceCreateRequestDto(
         @NotBlank(message = "Workspace name cannot be empty")
         @Size(max = 100, message = "Workspace name must not exceed 100 characters")
-        @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "Workspace name can only contain letters, numbers, and underscores.")
+        @Pattern(
+                regexp = "^[a-zA-Z][a-zA-Z0-9_]*$",
+                message = "Workspace name must start with a letter and can contain only letters, numbers, and underscores."
+        )
         String name,
         List<TaskCreateRequestDto> tasks) {
 }

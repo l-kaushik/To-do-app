@@ -69,7 +69,12 @@ public class UserService {
         return userToUserDto(user);
     }
 
-    public UserLoginResponseDto loginUser(@Valid UserLoginDto loginDto){
+    public UserDto getMe() {
+        User user = getCurrentAuthenticatedUser();
+        return new UserDto(user.getUuid(), user.getUsername(), user.getEmailId());
+    }
+
+    public UserLoginServiceResponseDto loginUser(@Valid UserLoginDto loginDto){
         try{
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginDto.identifier(), loginDto.password()));
@@ -77,7 +82,8 @@ public class UserService {
             User user = userPrincipal.user();
             String jwtToken = jwtService.generateToken(user.getUuid().toString());
 
-            return new UserLoginResponseDto(user.getUuid(), user.getUsername(), user.getEmailId(), jwtToken);
+            return new UserLoginServiceResponseDto(
+                    new UserLoginResponseDto(user.getUuid(), user.getUsername(), user.getEmailId()), jwtToken);
         }
         catch (BadCredentialsException | InternalAuthenticationServiceException e){
             String message = Objects.equals(e.getMessage(), "Bad credentials") ? "Invalid password" : e.getMessage();

@@ -12,14 +12,18 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "workspaces")
+@Table(name = "workspaces",
+    uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"owner_id", "name"})
+    }
+)
 public class Workspace extends AuditableEntity{
     // many workspaces belong to one user
     @ManyToOne(optional = false)
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String name;
 
     // one workspace can have many tasks

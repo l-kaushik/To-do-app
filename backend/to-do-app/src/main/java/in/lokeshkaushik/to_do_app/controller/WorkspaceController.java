@@ -1,7 +1,6 @@
 package in.lokeshkaushik.to_do_app.controller;
 
 import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskCreateRequestDto;
-import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskListResponseDto;
 import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskResponseDto;
 import in.lokeshkaushik.to_do_app.dto.TaskDto.TaskUpdateRequestDto;
 import in.lokeshkaushik.to_do_app.dto.WorkspaceDtos.*;
@@ -9,6 +8,7 @@ import in.lokeshkaushik.to_do_app.service.WorkspaceService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +16,8 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/workspaces")
+// Used for local dev to allow fronted to call backend
+//@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class WorkspaceController {
     @Autowired
     WorkspaceService workspaceService;
@@ -26,9 +28,17 @@ public class WorkspaceController {
         return ResponseEntity.ok(workspaceService.getWorkspaces());
     }
 
-    // Return data of single workspace using uuid
+    // only get called when api call include ?full=true
+    // TODO: Handle full=false cases
+    @GetMapping(value = "", params = "full=true")
+    public ResponseEntity<Page<WorkspaceMetaDto>> getFullWorkspaces(
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(workspaceService.getFullWorkspaces(page, size));
+    }
+
+    // Return meta-data of single workspace using uuid
     @GetMapping("/{workspaceId}")
-    public ResponseEntity<WorkspaceResponseDto> getWorkspace(@PathVariable @NotNull UUID workspaceId){
+    public ResponseEntity<WorkspaceMetaDto> getWorkspace(@PathVariable @NotNull UUID workspaceId){
         return ResponseEntity.ok(workspaceService.getWorkspace(workspaceId));
     }
 
@@ -53,8 +63,9 @@ public class WorkspaceController {
     }
 
     @GetMapping("/{workspaceId}/tasks")
-    public ResponseEntity<TaskListResponseDto> getTasks(@PathVariable @NotNull UUID workspaceId){
-        return ResponseEntity.ok(workspaceService.getTasks(workspaceId));
+    public ResponseEntity<Page<TaskResponseDto>> getTasks(@PathVariable @NotNull UUID workspaceId,
+       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
+        return ResponseEntity.ok(workspaceService.getTasks(workspaceId, page , size));
     }
 
     @GetMapping("/{workspaceId}/tasks/{taskId}")

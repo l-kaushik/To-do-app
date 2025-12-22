@@ -11,10 +11,14 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "tasks")
+@Table(name = "tasks",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"workspace_id", "rank"})
+        }
+)
 public class Task extends AuditableEntity{
     @Column(nullable = false)
-    private String name;
+    private String rank;
     private String description;
     private boolean completed;
 
@@ -23,7 +27,7 @@ public class Task extends AuditableEntity{
     private Workspace workspace;
 
     private Task(Builder builder) {
-        setName(builder.name);
+        setRank(builder.rank);
         setDescription(builder.description);
         setCompleted(builder.completed);
         setWorkspace(builder.workspace);
@@ -35,7 +39,7 @@ public class Task extends AuditableEntity{
 
 
     public static final class Builder {
-        private String name;
+        private String rank;
         private String description;
         private boolean completed;
         private Workspace workspace;
@@ -43,8 +47,8 @@ public class Task extends AuditableEntity{
         private Builder() {
         }
 
-        public Builder name(String val) {
-            name = val;
+        public Builder rank(String val) {
+            rank = val;
             return this;
         }
 
