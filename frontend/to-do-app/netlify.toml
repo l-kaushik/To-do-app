@@ -1,0 +1,5 @@
+[[redirects]]
+  from = "https://l-kaushik-todo.netlify.app/*"
+  to = "https://todo.lokeshkaushik.in/:splat"
+  status = 301
+  force = true
