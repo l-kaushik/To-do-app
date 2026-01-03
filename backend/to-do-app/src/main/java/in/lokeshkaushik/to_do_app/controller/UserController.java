@@ -71,11 +71,26 @@ public class UserController {
                 .secure(true)
                 .path("/")
                 .maxAge(7 * 24 * 60 * 60) // cookie last for 7 days
-                .sameSite("Strict")
+                .sameSite("None")
                 .build();
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
                 .body(userLoginServiceResponseDto.loginResponseDto());
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> loginUser(){
+        ResponseCookie cookie = ResponseCookie.from("jwt", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
+
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .build();
     }
 }

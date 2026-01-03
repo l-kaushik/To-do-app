@@ -25,6 +25,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             JOIN t.workspace w
             WHERE w.uuid = :workspaceUuid
             AND w.owner.uuid = :ownerUuid
+            ORDER BY t.rank ASC
             """)
     Page<TaskResponseDto> findAllWithWorkspaceUuid(Pageable pageable, @Param("workspaceUuid") UUID workspaceUuid,
                                                    @Param("ownerUuid") UUID ownerUuid);

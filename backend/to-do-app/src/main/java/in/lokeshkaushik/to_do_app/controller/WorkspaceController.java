@@ -52,14 +52,15 @@ public class WorkspaceController {
         return ResponseEntity.ok(workspaceService.updateWorkspace(workspaceDto));
     }
 
+    @DeleteMapping("/{workspaceId}")
+    public ResponseEntity<?> removeWorkspace(@PathVariable @NotNull UUID workspaceId){
+        workspaceService.removeWorkspace(workspaceId);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/exists")
     public ResponseEntity<Boolean> workspaceExistsByName(@RequestParam String name){
         return ResponseEntity.ok(workspaceService.workspaceExistsByName(name));
-    }
-
-    @GetMapping("/{workspaceId}/tasks/exists")
-    public ResponseEntity<Boolean> taskExistsByName(@PathVariable @NotNull UUID workspaceId, @RequestParam String name){
-        return ResponseEntity.ok(workspaceService.taskExistsByName(workspaceId, name));
     }
 
     @GetMapping("/{workspaceId}/tasks")
@@ -85,4 +86,10 @@ public class WorkspaceController {
         return ResponseEntity.ok(workspaceService.updateTask(workspaceId, taskUpdateRequestDto));
     }
 
+    @DeleteMapping("/{workspaceId}/tasks/{taskId}")
+    public ResponseEntity<?> removeTask(@PathVariable @NotNull UUID workspaceId,
+                                                      @PathVariable @NotNull UUID taskId) {
+        workspaceService.removeTask(workspaceId, taskId);
+        return ResponseEntity.ok().build();
+    }
 }
