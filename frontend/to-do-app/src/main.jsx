@@ -9,7 +9,6 @@ import "./index.css";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute.jsx'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import SwaggerUi from './components/SwaggerUi/SwaggerUi.jsx'
 
 const router = createBrowserRouter(
 	createRoutesFromElements(
