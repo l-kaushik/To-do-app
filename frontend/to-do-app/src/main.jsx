@@ -23,7 +23,6 @@ const router = createBrowserRouter(
 			<Route path = "/workspace/:uuid" element={<Workspace/>}/>
 		</Route>
 		<Route path = "/login" element={<Login/>}/>
-		<Route path = "/swagger-ui" element={<SwaggerUi/>}/>
 		</>
 	)
 );
